@@ -2532,21 +2532,111 @@
             if (modal) modal.remove();
         }
         
+        // 산출 결과 요약 텍스트 생성
+        function generateSummaryText() {
+            let text = `━━━━━━━━━━━━━━━━━━\n`;
+            text += `📊 ${currentSiteName}\n`;
+            text += `━━━━━━━━━━━━━━━━━━\n`;
+            text += `작성일: ${new Date().toLocaleString('ko-KR')}\n`;
+            text += `로스율: ${Math.round(currentLossRate * 100)}%\n\n`;
+            
+            // 석고보드 종류별 집계
+            const groupedByType = {};
+            const groupedByJoist = {};
+            
+            walls.forEach(wall => {
+                if (wall.width && wall.height) {
+                    const area = (wall.width * wall.height) / 1000000;
+                    const boardArea = getBoardArea(wall.boardSize);
+                    let boards = (area / boardArea);
+                    boards *= (wall.constructionSide === '2P' ? 2 : 1);
+                    boards *= (wall.faceDirection === '양면' ? 2 : 1);
+                    boards *= (1 + currentLossRate);
+                    const finalBoards = Math.ceil(boards);
+                    
+                    const boardKey = `${wall.boardType}-${wall.boardSize}-${wall.boardThickness}`;
+                    if (!groupedByType[boardKey]) {
+                        groupedByType[boardKey] = {
+                            type: wall.boardType,
+                            size: wall.boardSize,
+                            thickness: wall.boardThickness,
+                            totalBoards: 0
+                        };
+                    }
+                    groupedByType[boardKey].totalBoards += finalBoards;
+                    
+                    // 각재 집계 (간단 버전)
+                    if (wall.joistType === '목자재') {
+                        const joistKey = wall.woodType;
+                        if (!groupedByJoist[joistKey]) {
+                            groupedByJoist[joistKey] = { name: wall.woodType, count: 0 };
+                        }
+                        // 간단 계산
+                        const verticalCount = Math.floor(wall.width / wall.joistSpacing) + 1;
+                        const horizontal = Math.ceil(wall.width / 2700) * 2;
+                        let total = verticalCount + horizontal;
+                        total *= (wall.faceDirection === '양면' ? 2 : 1);
+                        groupedByJoist[joistKey].count += Math.ceil(total * (1 + currentLossRate));
+                    }
+                }
+            });
+            
+            text += `【석고보드】\n`;
+            Object.keys(groupedByType).forEach(key => {
+                const group = groupedByType[key];
+                text += `▪ ${group.type} ${group.size} ${group.thickness}\n`;
+                text += `  → ${group.totalBoards}장\n`;
+            });
+            
+            text += `\n【목자재/각재】\n`;
+            Object.keys(groupedByJoist).forEach(key => {
+                const group = groupedByJoist[key];
+                text += `▪ ${group.name} (2700mm)\n`;
+                text += `  → ${group.count}개\n`;
+            });
+            
+            text += `\n━━━━━━━━━━━━━━━━━━\n`;
+            text += `부산경남 전기공사 전문업체\n`;
+            text += `이에스테크 010-4087-1436\n`;
+            text += `━━━━━━━━━━━━━━━━━━`;
+            
+            return text;
+        }
+        
         // 카카오톡 전송
         function shareKakao() {
             closeShareOptions();
-            alert('💬 카카오톡 공유\n\n1. 엑셀 파일을 먼저 저장하세요\n2. 카카오톡에서 파일 전송을 선택하세요\n3. 저장된 CSV 파일을 전송하세요');
+            
+            const summaryText = generateSummaryText();
+            
+            // Web Share API 지원 여부 확인
+            if (navigator.share) {
+                navigator.share({
+                    title: `${currentSiteName} 산출 결과`,
+                    text: summaryText
+                }).then(() => {
+                    console.log('공유 성공');
+                }).catch((error) => {
+                    console.log('공유 취소:', error);
+                });
+            } else {
+                // Web Share API 미지원 시
+                alert('💬 카카오톡으로 전송\n\n아래 내용을 복사하여 카카오톡으로 전송하세요:\n\n' + summaryText);
+                
+                // 클립보드 복사 시도
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(summaryText).then(() => {
+                        alert('✅ 클립보드에 복사되었습니다!\n카카오톡에 붙여넣기 하세요.');
+                    });
+                }
+            }
         }
         
         // 문자 전송
         function shareSMS() {
             closeShareOptions();
             
-            // 산출 결과 요약 텍스트 생성
-            let summaryText = `[${currentSiteName} 산출 결과]\n\n`;
-            
-            // 간단한 요약만 포함
-            summaryText += '상세 내용은 파일을 참고해주세요.';
+            const summaryText = generateSummaryText();
             
             // SMS 링크 생성
             const smsBody = encodeURIComponent(summaryText);
@@ -2557,12 +2647,12 @@
         function shareEmail() {
             closeShareOptions();
             
+            const summaryText = generateSummaryText();
+            
             const subject = encodeURIComponent(`[${currentSiteName}] 석고보드·각재 물량 산출 결과`);
-            const body = encodeURIComponent(`${currentSiteName} 프로젝트의 산출 결과를 첨부 파일로 보내드립니다.\n\n작성일: ${new Date().toLocaleString('ko-KR')}`);
+            const body = encodeURIComponent(summaryText);
             
             window.location.href = `mailto:?subject=${subject}&body=${body}`;
-            
-            alert('📧 이메일 앱이 열립니다.\n엑셀 파일을 먼저 저장한 후 첨부하세요.');
         }
 
         // 로스율 업데이트
