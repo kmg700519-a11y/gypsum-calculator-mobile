@@ -733,7 +733,7 @@
                     💾 내부 저장공간에서 불러오기
                 </button>
                 <button class="btn btn-primary" onclick="loadFromFile()">
-                    📁 PC 파일에서 불러오기
+                    📁 내 기기에서 불러오기
                 </button>
                 <button class="btn btn-primary" onclick="loadImageAsBackground()">
                     🖼️ 이미지를 배경으로 불러오기
@@ -848,9 +848,9 @@
     </div>
 
     <!-- 숨겨진 파일 입력 요소 -->
-    <input type="file" id="projectFileInput" accept=".json" style="display: none;" onchange="handleProjectFile(this)">
+    <input type="file" id="projectFileInput" accept=".json,application/json,text/json" style="display: none;" onchange="handleProjectFile(this)">
     <input type="file" id="imageFileInput" accept="image/*" style="display: none;" onchange="handleImageFile(this)">
-    <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;" onchange="handlePDFFile(this)">
+    <input type="file" id="pdfFileInput" accept=".pdf,application/pdf" style="display: none;" onchange="handlePDFFile(this)">
 
     <script>
         // 전역 변수
@@ -1482,7 +1482,7 @@
             loadProject();
         }
 
-        // PC 파일에서 불러오기
+        // 내 기기에서 불러오기 (모든 경로에서 검색 가능)
         function loadFromFile() {
             closeLoadOptions();
             document.getElementById('projectFileInput').click();
@@ -1500,11 +1500,13 @@
             document.getElementById('pdfFileInput').click();
         }
 
-        // 프로젝트 파일 처리
+        // 프로젝트 파일 처리 (내 기기에서 불러오기)
         function handleProjectFile(input) {
             const file = input.files[0];
             if (!file) return;
 
+            showLoading();
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
@@ -1515,15 +1517,36 @@
                     walls = projectData.walls || [];
                     lastWallHeight = projectData.lastWallHeight || 2800;
                     
+                    if (projectData.backgroundImage) {
+                        const img = new Image();
+                        img.onload = function() {
+                            backgroundImage = img;
+                            document.getElementById('drawingTools').style.display = 'flex';
+                            document.getElementById('canvasContainer').style.display = 'block';
+                            redrawAll();
+                            hideLoading();
+                            alert('✅ 프로젝트 파일이 불러와졌습니다!\n현장명: ' + currentSiteName + '\n경로: ' + file.name);
+                        };
+                        img.src = projectData.backgroundImage;
+                    } else {
+                        backgroundImage = null;
+                        document.getElementById('drawingTools').style.display = 'flex';
+                        document.getElementById('canvasContainer').style.display = 'block';
+                        redrawAll();
+                        hideLoading();
+                        alert('✅ 프로젝트 파일이 불러와졌습니다!\n현장명: ' + currentSiteName + '\n경로: ' + file.name);
+                    }
+                    
                     document.getElementById('siteName').value = currentSiteName;
-                    document.getElementById('drawingTools').style.display = 'flex';
                     
-                    redrawAll();
-                    
-                    alert('✅ 프로젝트 파일이 불러와졌습니다!\n현장명: ' + currentSiteName);
                 } catch (error) {
-                    alert('❌ 프로젝트 파일을 읽는 중 오류가 발생했습니다: ' + error.message);
+                    hideLoading();
+                    alert('❌ 프로젝트 파일을 읽는 중 오류가 발생했습니다: ' + error.message + '\n파일: ' + file.name);
                 }
+            };
+            reader.onerror = function() {
+                hideLoading();
+                alert('❌ 파일을 읽을 수 없습니다: ' + file.name);
             };
             reader.readAsText(file);
         }
