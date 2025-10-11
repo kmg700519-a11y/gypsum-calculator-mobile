@@ -901,7 +901,7 @@
 
     <!-- 산출 결과 모달 -->
     <div class="wall-input-modal" id="resultModal">
-        <div class="modal-content" style="max-width: 100vw; max-height: 100vh; width: 100%; height: 100%; margin: 0; border-radius: 0; padding: 0;">
+        <div class="modal-content" style="max-width: 100vw; max-height: 100vh; width: 100%; height: 100%; margin: 0; border-radius: 0; padding: 0;" onclick="event.stopPropagation()">
             <div class="modal-header" style="position: sticky; top: 0; background: white; z-index: 100; padding: 15px; border-bottom: 2px solid #667eea;">
                 <h2 class="modal-title" style="font-size: 1.3rem; margin: 0;">📊 물량 산출 결과</h2>
                 <button onclick="closeResultModal()" style="position: absolute; right: 15px; top: 15px; background: none; border: none; font-size: 28px; cursor: pointer; color: #667eea;">&times;</button>
@@ -2260,7 +2260,9 @@
             let resultHTML = `
                 <div style="margin-bottom: 20px; padding: 15px; background: #f0f4ff; border-radius: 10px; text-align: center;">
                     <label style="font-weight: 600; margin-right: 10px; font-size: 1.1rem;">로스율:</label>
-                    <select onchange="updateLossRate(parseFloat(this.value))" style="padding: 8px 15px; border-radius: 8px; border: 2px solid #667eea; font-size: 1rem;">
+                    <select id="lossRateSelect" onchange="updateLossRate(parseFloat(this.value))" style="padding: 8px 15px; border-radius: 8px; border: 2px solid #667eea; font-size: 1rem;">
+                        <option value="0">0%</option>
+                        <option value="0.05">5%</option>
                         <option value="0.1" selected>10%</option>
                         <option value="0.15">15%</option>
                         <option value="0.2">20%</option>
