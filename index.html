@@ -1428,21 +1428,45 @@
 
         // 메인 메뉴 함수들
         function showDrawingTools() {
-            const drawingTools = document.getElementById('drawingTools');
-            const canvasContainer = document.getElementById('canvasContainer');
+            // 기존에 그린 내용이 있는지 확인
+            const hasContent = drawnLines.length > 0 || walls.length > 0 || backgroundImage !== null;
             
-            if (drawingTools.style.display === 'none' || drawingTools.style.display === '') {
-                drawingTools.style.display = 'flex';
-                canvasContainer.style.display = 'block';
-                setTimeout(() => {
-                    redrawAll();
-                }, 100);
-            } else {
-                if (currentTool !== 'wall') {
-                    drawingTools.style.display = 'none';
-                    canvasContainer.style.display = 'none';
+            if (hasContent) {
+                const confirmNew = confirm('⚠️ 새로 그리기를 시작하시겠습니까?\n\n현재 작업 내용이 있습니다.\n저장하지 않은 내용은 사라집니다.\n\n계속하시겠습니까?');
+                
+                if (!confirmNew) {
+                    return;  // 취소하면 아무것도 안함
+                }
+                
+                // 저장할지 물어보기
+                const shouldSave = confirm('💾 현재 작업을 저장하시겠습니까?');
+                
+                if (shouldSave) {
+                    saveProject();  // 저장 수행
                 }
             }
+            
+            // 캔버스 초기화
+            drawnLines = [];
+            walls = [];
+            backgroundImage = null;
+            selectedWall = null;
+            zoomLevel = 1;
+            panX = 0;
+            panY = 0;
+            
+            // 현장명 초기화 (선택사항)
+            // document.getElementById('siteName').value = '';
+            
+            // 도구 선택 해제
+            setTool('none');
+            
+            // 캔버스 지우고 다시 그리기
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            redrawAll();
+            updateZoomInfo();
+            
+            alert('✅ 새 캔버스가 준비되었습니다!');
         }
 
         // 현장명 저장 (메뉴의 저장하기 버튼에서 사용)
