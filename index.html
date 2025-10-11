@@ -2439,7 +2439,15 @@
         
         // PDF로 저장
         function saveAsPDF() {
-            alert('📄 PDF 저장 기능\n\n브라우저의 인쇄 기능을 사용하여\n"PDF로 저장"을 선택하세요.');
+            // 파일명 입력받기
+            const defaultName = `${currentSiteName}_산출결과_${new Date().toLocaleDateString('ko-KR').replace(/\./g, '').trim()}`;
+            const fileName = prompt('💾 PDF 파일명을 입력하세요:', defaultName);
+            
+            if (!fileName) return; // 취소하면 중단
+            
+            alert('📄 PDF 저장\n\n인쇄 창에서:\n1. "대상"을 "PDF로 저장" 선택\n2. 저장 위치를 선택하세요\n3. 파일명: ' + fileName);
+            
+            // 브라우저 인쇄 창 열기
             window.print();
         }
         
@@ -2453,10 +2461,17 @@
                 return;
             }
             
+            // 파일명 입력받기
+            const defaultName = `${currentSiteName}_산출결과_${new Date().toLocaleDateString('ko-KR').replace(/\./g, '').trim()}`;
+            const fileName = prompt('💾 엑셀 파일명을 입력하세요:', defaultName);
+            
+            if (!fileName) return; // 취소하면 중단
+            
             // 테이블을 CSV 형식으로 변환
             let csv = '\uFEFF'; // UTF-8 BOM
-            csv += `현장명: ${currentSiteName}\n`;
-            csv += `작성일: ${new Date().toLocaleString('ko-KR')}\n\n`;
+            csv += `현장명,${currentSiteName}\n`;
+            csv += `작성일,${new Date().toLocaleString('ko-KR')}\n`;
+            csv += `로스율,${Math.round(currentLossRate * 100)}%\n\n`;
             
             const table = tables[0];
             const rows = table.querySelectorAll('tr');
@@ -2466,6 +2481,7 @@
                 const rowData = [];
                 cells.forEach(cell => {
                     let text = cell.textContent.trim();
+                    text = text.replace(/[\n\r]/g, ' '); // 줄바꿈 제거
                     text = text.replace(/"/g, '""'); // 따옴표 이스케이프
                     rowData.push(`"${text}"`);
                 });
@@ -2478,13 +2494,13 @@
             const url = URL.createObjectURL(blob);
             
             link.setAttribute('href', url);
-            link.setAttribute('download', `${currentSiteName}_산출결과.csv`);
+            link.setAttribute('download', `${fileName}.csv`);
             link.style.display = 'none';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
             
-            alert('✅ 엑셀 파일이 다운로드되었습니다!\n파일명: ' + currentSiteName + '_산출결과.csv');
+            alert('✅ 엑셀 파일이 저장되었습니다!\n\n파일명: ' + fileName + '.csv\n\n📱 모바일: 다운로드 폴더\n💻 PC: 다운로드 폴더\n\n※ 브라우저 설정에서 저장 위치를 변경할 수 있습니다.');
         }
         
         // 공유하기
