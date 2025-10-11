@@ -10,7 +10,7 @@
     <meta name="description" content="석고보드·각재 물량 산출기 - 모바일 최적화">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
     <title>석고보드·각재 물량 산출기</title>
     <style>
         * {
@@ -1540,6 +1540,12 @@
             const file = input.files[0];
             if (!file) return;
             
+            // PDF.js 라이브러리 확인
+            if (typeof pdfjsLib === 'undefined') {
+                alert('❌ PDF.js 라이브러리를 로드할 수 없습니다.\n잠시 후 다시 시도해주세요.');
+                return;
+            }
+            
             showLoading();
             
             const reader = new FileReader();
@@ -1566,6 +1572,10 @@
                     hideLoading();
                     alert('❌ PDF 파일을 읽는 중 오류가 발생했습니다: ' + error.message);
                 });
+            };
+            reader.onerror = function() {
+                hideLoading();
+                alert('❌ 파일을 읽을 수 없습니다.');
             };
             reader.readAsArrayBuffer(file);
         }
