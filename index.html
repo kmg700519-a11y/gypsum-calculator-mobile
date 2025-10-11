@@ -549,12 +549,22 @@
                 flex-direction: column;
             }
             
+            .menu-item {
+                min-width: 55px;
+                min-height: 42px;
+                padding: 8px 4px;
+                flex: 0 0 calc(33.333% - 4px);
+                max-width: calc(33.333% - 4px);
+            }
+            
             .menu-icon {
-                font-size: 1.5rem;
+                font-size: 1.2rem;
+                margin-bottom: 2px;
             }
             
             .menu-text {
-                font-size: 0.7rem;
+                font-size: 0.6rem;
+                font-weight: 600;
             }
             
             .zoom-btn {
@@ -572,6 +582,29 @@
             
             .site-input {
                 min-width: 100%;
+            }
+            
+            .menu-item {
+                min-width: 50px;
+                min-height: 38px;
+                padding: 6px 2px;
+                flex: 0 0 calc(33.333% - 3px);
+                max-width: calc(33.333% - 3px);
+            }
+            
+            .menu-icon {
+                font-size: 1.1rem;
+                margin-bottom: 1px;
+            }
+            
+            .menu-text {
+                font-size: 0.55rem;
+                font-weight: 600;
+                line-height: 1.1;
+            }
+            
+            .main-menu {
+                gap: 3px;
             }
         }
     </style>
