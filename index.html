@@ -908,9 +908,9 @@
         let currentPage = 1;
         let pageRendering = false;
         let pageNumPending = null;
-        let scale = 1.0;
-        let canvas = null;
-        let ctx = null;
+        let pdfScale = 1.0;
+        let pdfCanvas = null;
+        let pdfCtx = null;
 
         // PWA 서비스 워커 등록
         if ('serviceWorker' in navigator) {
@@ -1549,14 +1549,14 @@
                 pdfjsLib.getDocument(typedArray).promise.then(function(pdf) {
                     pdfDoc = pdf;
                     currentPage = 1;
-                    scale = 1.0;
+                    pdfScale = 1.0;
                     
                     // PDF 뷰어 모달 표시
                     document.getElementById('pdfViewerModal').classList.add('show');
                     
                     // 캔버스 초기화
-                    canvas = document.getElementById('pdfCanvas');
-                    ctx = canvas.getContext('2d');
+                    pdfCanvas = document.getElementById('pdfCanvas');
+                    pdfCtx = pdfCanvas.getContext('2d');
                     
                     // 첫 페이지 렌더링
                     renderPage(currentPage);
@@ -1575,12 +1575,12 @@
             pageRendering = true;
             
             pdfDoc.getPage(num).then(function(page) {
-                const viewport = page.getViewport({scale: scale});
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+                const viewport = page.getViewport({scale: pdfScale});
+                pdfCanvas.height = viewport.height;
+                pdfCanvas.width = viewport.width;
                 
                 const renderContext = {
-                    canvasContext: ctx,
+                    canvasContext: pdfCtx,
                     viewport: viewport
                 };
                 
@@ -1602,7 +1602,7 @@
                 document.getElementById('nextPageBtn').disabled = (num >= pdfDoc.numPages);
                 
                 // 줌 정보 업데이트
-                document.getElementById('zoomInfo').textContent = Math.round(scale * 100) + '%';
+                document.getElementById('zoomInfo').textContent = Math.round(pdfScale * 100) + '%';
             });
         }
         
@@ -1620,17 +1620,17 @@
             renderPage(currentPage);
         }
         
-        // 줌 인
+        // PDF 줌 인
         function zoomIn() {
-            if (scale >= 3.0) return;
-            scale += 0.2;
+            if (pdfScale >= 3.0) return;
+            pdfScale += 0.2;
             renderPage(currentPage);
         }
         
-        // 줌 아웃
+        // PDF 줌 아웃
         function zoomOut() {
-            if (scale <= 0.5) return;
-            scale -= 0.2;
+            if (pdfScale <= 0.5) return;
+            pdfScale -= 0.2;
             renderPage(currentPage);
         }
         
@@ -1639,7 +1639,7 @@
             document.getElementById('pdfViewerModal').classList.remove('show');
             pdfDoc = null;
             currentPage = 1;
-            scale = 1.0;
+            pdfScale = 1.0;
         }
 
         // 프로젝트 파일 처리 (내 기기에서 불러오기)
