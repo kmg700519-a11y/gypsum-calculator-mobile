@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="석고보드 산출기">
+    <meta name="description" content="석고보드·각재 물량 산출기 - 모바일 최적화">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>석고보드·각재 물량 산출기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            touch-action: pan-x pan-y;
+            overscroll-behavior: contain;
+        }
+        
+        /* 터치 최적화 */
+        button, .menu-item, .btn {
+            -webkit-tap-highlight-color: rgba(102, 126, 234, 0.3);
+            touch-action: manipulation;
+        }
+
+        /* 시작화면 */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 2rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .app-title {
+            display: none;
+        }
+
+        .company-info {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+        }
+
+        .splash-instruction {
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            font-size: 1rem;
+            animation: blink 2s infinite;
+            cursor: pointer;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 0.8; }
+            51%, 100% { opacity: 1; }
+        }
+
+        /* 메인화면 */
+        .main-screen {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .main-screen.show {
+            display: block;
+        }
+
+        /* 상단 배너 */
+        .banner {
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+            background-size: 200% 200%;
+            animation: gradientShift 3s ease infinite;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .banner-text {
+            display: inline-block;
+            animation: scroll 15s linear infinite;
+            padding-left: 100%;
+        }
+
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* 컨테이너 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 헤더 - 완전 삭제 */
+        .header {
+            display: none;
+        }
+
+        .main-logo {
+            display: none;
+        }
+
+        .main-title {
+            display: none;
+        }
+
+        .subtitle {
+            display: none;
+        }
+
+        /* 메인 메뉴 - 모바일 가로 배치 */
+        .main-menu {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .menu-item {
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 70px;
+            min-height: 48px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.2);
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .menu-icon {
+            font-size: 1.2rem;
+            margin-bottom: 3px;
+        }
+
+        .menu-text {
+            font-size: 0.6rem;
+            font-weight: 600;
+        }
+
+        /* 현장명 표기 */
+        .site-info {
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .site-name-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .site-label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .site-input {
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            min-width: 200px;
+            transition: border-color 0.3s ease;
+        }
+
+        .site-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .site-save-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .site-save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* 캔버스 영역 */
+        .canvas-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        /* 모바일에서 캔버스 컨테이너 패딩 줄이기 */
+        @media (max-width: 768px) {
+            .canvas-container {
+                padding: 5px !important;
+                margin-bottom: 10px;
+            }
+        }
+
+        .canvas-wrapper {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            background: #f8f9fa;
+            cursor: grab;
+        }
+
+        .canvas-wrapper:active {
+            cursor: grabbing;
+        }
+
+        /* 줌 컨트롤 */
+        .zoom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 8px;
+            padding: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .zoom-btn {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 5px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .zoom-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .zoom-info {
+            font-size: 12px;
+            text-align: center;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        #drawingCanvas {
+            display: block;
+            cursor: crosshair;
+            background: white;
+        }
+
+        /* 커스텀 커서 */
+        .cursor-crosshair {
+            cursor: crosshair !important;
+        }
+
+        .cursor-circle {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="%23667eea" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="%23667eea"/></svg>') 12 12, pointer !important;
+        }
+
+        .cursor-pointer {
+            cursor: pointer !important;
+        }
+
+        /* 벽체 정보 입력창 */
+        .wall-input-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .wall-input-modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #666;
+            border: 2px solid #ddd;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* 산출 결과 */
+        .result-section {
+            display: none;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 1.8rem;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .result-table th,
+        .result-table td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        .result-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+        }
+
+        .result-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        /* 로딩 스피너 */
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+        }
+        
+        .loading-spinner.show {
+            display: block;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 터치 피드백 */
+        .menu-item:active, .btn:active {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+        
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .modal-buttons {
+                flex-direction: column;
+            }
+            
+            .menu-icon {
+                font-size: 1.5rem;
+            }
+            
+            .menu-text {
+                font-size: 0.7rem;
+            }
+            
+            .zoom-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .site-name-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .site-input {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 시작화면 -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="logo">🏗️</div>
+        <h1 class="app-title">석고보드·각재 물량 산출기</h1>
+        <div class="company-info">
+            부산경남 전기공사 전문업체 이에스테크<br>
+            전기공사업 부산-02323<br>
+            문의: 010-4087-1436
+        </div>
+        <div class="splash-instruction">
+            화면을 클릭하거나 ESC키를 누르면 바로 시작됩니다
+        </div>
+    </div>
+
+    <!-- 로딩 스피너 -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 메인화면 -->
+    <div class="main-screen" id="mainScreen">
+        <!-- 상단 배너 -->
+        <div class="banner" onclick="callPhone()">
+            <div class="banner-text">
+                부산경남 전기공사 전문업체 이에스테크 | 전기공사업 부산-02323 | 문의 010-4087-1436
+            </div>
+        </div>
+
+        <div class="container">
+            <!-- 현장명 표기 -->
+            <div class="site-info">
+                <div class="site-name-container">
+                    <label class="site-label">현장명:</label>
+                    <input type="text" class="site-input" id="siteName" placeholder="현장명을 입력하세요" value="새 현장">
+                    <button class="site-save-btn" onclick="saveSiteName()">💾</button>
+                </div>
+            </div>
+
+            <!-- 메인 메뉴 -->
+            <div class="main-menu">
+                <div class="menu-item" onclick="showDrawingTools()">
+                    <div class="menu-icon">✏️</div>
+                    <div class="menu-text">새로 그리기</div>
+                </div>
+                <div class="menu-item" onclick="showLoadOptions()">
+                    <div class="menu-icon">📁</div>
+                    <div class="menu-text">불러오기</div>
+                </div>
+                <div class="menu-item" onclick="saveProject()">
+                    <div class="menu-icon">💾</div>
+                    <div class="menu-text">저장하기</div>
+                </div>
+                <div class="menu-item" onclick="selectWall()">
+                    <div class="menu-icon">🧱</div>
+                    <div class="menu-text">벽체선택</div>
+                </div>
+                <div class="menu-item" onclick="calculateMaterials()">
+                    <div class="menu-icon">📐</div>
+                    <div class="menu-text">산출</div>
+                </div>
+                <div class="menu-item" onclick="showCalculationHistory()">
+                    <div class="menu-icon">📊</div>
+                    <div class="menu-text">산출내역 보기</div>
+                </div>
+            </div>
+
+            <!-- 그리기 도구 - 가로 배치 (수정됨) -->
+            <div class="main-menu" id="drawingTools" style="display: none;">
+                <div class="menu-item" onclick="setTool('draw')">
+                    <div class="menu-icon">✏️</div>
+                    <div class="menu-text">그리기</div>
+                </div>
+                <div class="menu-item" onclick="setTool('line')">
+                    <div class="menu-icon">📏</div>
+                    <div class="menu-text">직선</div>
+                </div>
+                <div class="menu-item" onclick="setTool('eraser')">
+                    <div class="menu-icon">🗑️</div>
+                    <div class="menu-text">지우개</div>
+                </div>
+                <div class="menu-item" onclick="undoLast()">
+                    <div class="menu-icon">↶</div>
+                    <div class="menu-text">이전</div>
+                </div>
+                <div class="menu-item" onclick="document.getElementById('imageFileInput').click()">
+                    <div class="menu-icon">🖼️</div>
+                    <div class="menu-text">배경</div>
+                </div>
+                <div class="menu-item" onclick="saveProject()">
+                    <div class="menu-icon">💾</div>
+                    <div class="menu-text">저장</div>
+                </div>
+            </div>
+
+            <!-- 캔버스 영역 -->
+            <div class="canvas-container" id="canvasContainer" style="display: none;">
+                <div class="canvas-wrapper" id="canvasWrapper">
+                    <div class="zoom-controls">
+                        <button class="zoom-btn" onclick="zoomIn()" title="확대">+</button>
+                        <button class="zoom-btn" onclick="zoomOut()" title="축소">−</button>
+                        <button class="zoom-btn" onclick="resetZoom()" title="초기화">⌂</button>
+                        <div class="zoom-info" id="zoomInfo">100%</div>
+                    </div>
+                    <canvas id="drawingCanvas" width="800" height="500"></canvas>
+                </div>
+            </div>
+
+            <!-- 산출 결과 -->
+            <div class="result-section" id="resultSection">
+                <div class="result-header">
+                    <h2 class="result-title">물량 산출 결과</h2>
+                </div>
+                <div id="resultContent">
+                    <!-- 결과 내용이 여기에 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 불러오기 옵션 선택창 -->
+    <div class="wall-input-modal" id="loadOptionsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">불러오기 옵션 선택</h2>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <button class="btn btn-primary" onclick="loadFromInternal()">
+                    💾 내부 저장공간에서 불러오기
+                </button>
+                <button class="btn btn-primary" onclick="loadFromFile()">
+                    📁 PC 파일에서 불러오기
+                </button>
+                <button class="btn btn-primary" onclick="loadImageAsBackground()">
+                    🖼️ 이미지를 배경으로 불러오기
+                </button>
+                <button class="btn btn-primary" onclick="loadPDFFile()">
+                    📄 PDF 파일 불러오기
+                </button>
+                <button class="btn btn-secondary" onclick="closeLoadOptions()">
+                    취소
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 벽체 정보 입력창 -->
+    <div class="wall-input-modal" id="wallInputModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">벽체 정보 입력</h2>
+            </div>
+            <form id="wallInputForm">
+                <div class="form-group">
+                    <label class="form-label">벽체 명칭</label>
+                    <input type="text" class="form-input" id="wallName" placeholder="예: 화장실벽, 아트월, 사무실 우" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">석고보드 종류</label>
+                    <select class="form-select" id="boardType" required>
+                        <option value="일반석고보드" selected>일반석고보드</option>
+                        <option value="방수석고보드">방수석고보드</option>
+                        <option value="방화석고보드">방화석고보드</option>
+                    </select>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">석고보드 크기</label>
+                        <select class="form-select" id="boardSize" required>
+                            <option value="900x1800" selected>900×1800mm (일반)</option>
+                            <option value="1200x1800">1200×1800mm (표준)</option>
+                            <option value="900x2400">900×2400mm (장형)</option>
+                            <option value="1200x2400">1200×2400mm (대형)</option>
+                            <option value="600x2400">600×2400mm (협폭)</option>
+                            <option value="1200x2700">1200×2700mm (특대)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">석고보드 두께</label>
+                        <select class="form-select" id="boardThickness" required>
+                            <option value="9.5mm" selected>9.5mm (일반)</option>
+                            <option value="12.5mm">12.5mm (표준)</option>
+                            <option value="15mm">15mm (두꺼운)</option>
+                            <option value="18mm">18mm (특수)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">벽체길이 (mm)</label>
+                        <input type="number" class="form-input" id="wallWidth" placeholder="A-B 자동계산" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">석고마감높이 (mm)</label>
+                        <input type="number" class="form-input" id="wallHeight" value="2800" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">시공면</label>
+                        <select class="form-select" id="constructionSide" required>
+                            <option value="1P">1P</option>
+                            <option value="2P">2P</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">면방향</label>
+                        <select class="form-select" id="faceDirection" required>
+                            <option value="전면">전면</option>
+                            <option value="양면">양면</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">각재간격 (mm)</label>
+                        <select class="form-select" id="joistSpacing" required>
+                            <option value="400">400mm</option>
+                            <option value="450">450mm</option>
+                            <option value="600">600mm</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">비고/메모</label>
+                    <input type="text" class="form-input" id="wallMemo" placeholder="추가 정보 입력">
+                </div>
+                
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" onclick="closeWallInput()">취소</button>
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 숨겨진 파일 입력 요소 -->
+    <input type="file" id="projectFileInput" accept=".json" style="display: none;" onchange="handleProjectFile(this)">
+    <input type="file" id="imageFileInput" accept="image/*" style="display: none;" onchange="handleImageFile(this)">
+    <input type="file" id="pdfFileInput" accept=".pdf" style="display: none;" onchange="handlePDFFile(this)">
+
+    <script>
+        // 전역 변수
+        let currentTool = 'draw';
+        let isDrawing = false;
+        let startX, startY;
+        let walls = [];
+        let drawnLines = [];
+        let selectedWall = null;
+        let canvas, ctx;
+        let currentSiteName = '새 현장';
+        let backgroundImage = null;
+        let freeDrawPoints = []; // 자유 그리기 포인트 저장
+        
+        // 줌 관련 변수
+        let zoomLevel = 1;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let lastPanX = 0;
+        let lastPanY = 0;
+        
+        // 이전 입력값 저장 변수
+        let lastWallHeight = 2800;
+        let currentLossRate = 0.1;
+
+        // PWA 서비스 워커 등록
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('✅ Service Worker 등록 성공'))
+                    .catch(err => console.log('❌ Service Worker 등록 실패:', err));
+            });
+        }
+        
+        // 더블탭 줌 방지
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+        
+        // 캔버스 성능 최적화
+        let rafId = null;
+        let needsRedraw = false;
+        
+        function requestRedraw() {
+            if (needsRedraw) return;
+            needsRedraw = true;
+            rafId = requestAnimationFrame(() => {
+                redrawAll();
+                needsRedraw = false;
+            });
+        }
+        
+        // 로딩 표시 함수
+        function showLoading() {
+            document.getElementById('loadingSpinner').classList.add('show');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingSpinner').classList.remove('show');
+        }
+
+        // 시작화면 처리
+        window.addEventListener('load', function() {
+            function goToMainScreen() {
+                document.getElementById('splashScreen').classList.add('hidden');
+                document.getElementById('mainScreen').classList.add('show');
+                initCanvas();
+                initWallForm();
+            }
+            
+            document.getElementById('splashScreen').addEventListener('click', goToMainScreen);
+            
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') {
+                    if (!document.getElementById('mainScreen').classList.contains('show')) {
+                        goToMainScreen();
+                    }
+                }
+            });
+            
+            setTimeout(function() {
+                if (!document.getElementById('mainScreen').classList.contains('show')) {
+                    goToMainScreen();
+                }
+            }, 3000);
+        });
+
+        // 캔버스 초기화
+        function initCanvas() {
+            canvas = document.getElementById('drawingCanvas');
+            ctx = canvas.getContext('2d');
+            
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            canvas.addEventListener('wheel', handleWheelZoom);
+            
+            canvas.addEventListener('mousedown', startPanning);
+            canvas.addEventListener('mousemove', handlePanning);
+            canvas.addEventListener('mouseup', stopPanning);
+            
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                if (e.touches.length === 2) {
+                    handlePinchZoom(e);
+                } else {
+                    startDrawing(e);
+                }
+            });
+            canvas.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                if (e.touches.length === 2) {
+                    handlePinchZoom(e);
+                } else {
+                    draw(e);
+                }
+            });
+            canvas.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                stopDrawing(e);
+            });
+            
+            updateZoomInfo();
+        }
+
+        // 벽체 입력 폼 초기화
+        function initWallForm() {
+            document.getElementById('wallInputForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                if (selectedWall) {
+                    selectedWall.name = document.getElementById('wallName').value;
+                    selectedWall.boardType = document.getElementById('boardType').value;
+                    selectedWall.boardSize = document.getElementById('boardSize').value;
+                    selectedWall.boardThickness = document.getElementById('boardThickness').value;
+                    selectedWall.width = parseInt(document.getElementById('wallWidth').value);
+                    selectedWall.height = parseInt(document.getElementById('wallHeight').value);
+                    selectedWall.constructionSide = document.getElementById('constructionSide').value;
+                    selectedWall.faceDirection = document.getElementById('faceDirection').value;
+                    selectedWall.joistSpacing = parseInt(document.getElementById('joistSpacing').value);
+                    selectedWall.memo = document.getElementById('wallMemo').value;
+                    
+                    lastWallHeight = selectedWall.height;
+                    
+                    const existingWallIndex = walls.findIndex(wall => wall === selectedWall);
+                    if (existingWallIndex === -1) {
+                        walls.push(selectedWall);
+                        alert('✅ 벽체 정보가 저장되었습니다!\n벽체명: ' + selectedWall.name);
+                    } else {
+                        walls[existingWallIndex] = selectedWall;
+                        alert('✅ 벽체 정보가 수정되었습니다!\n벽체명: ' + selectedWall.name);
+                    }
+                    
+                    // 캔버스와 그리기 도구 표시
+                    document.getElementById('canvasContainer').style.display = 'block';
+                    document.getElementById('drawingTools').style.display = 'flex';
+                    
+                    redrawAll();
+                }
+                
+                document.getElementById('wallInputModal').classList.remove('show');
+                selectedWall = null;
+                setTool('line');
+                document.getElementById('wallInputForm').reset();
+            });
+        }
+
+        // 도구 선택
+        function setTool(tool) {
+            currentTool = tool;
+            
+            document.querySelectorAll('.menu-item').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            canvas.className = '';
+            if (tool === 'wall') {
+                canvas.classList.add('cursor-circle');
+            } else if (tool === 'eraser') {
+                canvas.classList.add('cursor-pointer');
+            } else {
+                canvas.classList.add('cursor-crosshair');
+            }
+            
+            if (['line', 'draw', 'eraser'].includes(tool)) {
+                document.getElementById('drawingTools').style.display = 'flex';
+            }
+        }
+
+        // 그리기 시작
+        function startDrawing(e) {
+            if (isPanning) return;
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const rect = canvas.getBoundingClientRect();
+            const canvasX = clientX - rect.left;
+            const canvasY = clientY - rect.top;
+            
+            if (currentTool !== 'wall' && checkWallNameClick(canvasX, canvasY)) {
+                return;
+            }
+            
+            isDrawing = true;
+            startX = (canvasX - panX) / zoomLevel;
+            startY = (canvasY - panY) / zoomLevel;
+            
+            if (currentTool === 'wall') {
+                selectWallPoint(e);
+            } else if (currentTool === 'draw') {
+                // 자유 그리기 시작: 포인트 배열 초기화 및 첫 포인트 추가
+                freeDrawPoints = [{ x: startX, y: startY }];
+            }
+        }
+
+        // 그리기 중
+        function draw(e) {
+            if (!isDrawing || isPanning) return;
+            
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const rect = canvas.getBoundingClientRect();
+            const currentX = (clientX - rect.left - panX) / zoomLevel;
+            const currentY = (clientY - rect.top - panY) / zoomLevel;
+            
+            if (currentTool === 'draw') {
+                // 자유 그리기: 포인트 추가하고 실시간으로 그리기
+                freeDrawPoints.push({ x: currentX, y: currentY });
+                
+                ctx.save();
+                ctx.translate(panX, panY);
+                ctx.scale(zoomLevel, zoomLevel);
+                
+                if (freeDrawPoints.length > 1) {
+                    const lastPoint = freeDrawPoints[freeDrawPoints.length - 2];
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#667eea';
+                    ctx.lineWidth = 3 / zoomLevel;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.moveTo(lastPoint.x, lastPoint.y);
+                    ctx.lineTo(currentX, currentY);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            } else if (currentTool !== 'eraser') {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.save();
+                ctx.translate(panX, panY);
+                ctx.scale(zoomLevel, zoomLevel);
+                redrawCanvas();
+                redrawAllLines();
+                
+                ctx.beginPath();
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                
+                switch(currentTool) {
+                    case 'line':
+                        drawLine(startX, startY, currentX, currentY);
+                        break;
+                }
+                ctx.restore();
+            } else {
+                eraseAt(currentX, currentY);
+            }
+        }
+
+        // 그리기 종료
+        function stopDrawing(e) {
+            if (!isDrawing) return;
+            
+            const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            
+            isDrawing = false;
+            const rect = canvas.getBoundingClientRect();
+            const endX = (clientX - rect.left - panX) / zoomLevel;
+            const endY = (clientY - rect.top - panY) / zoomLevel;
+            
+            if (currentTool === 'draw') {
+                // 자유 그리기 완료: 전체 경로를 저장
+                if (freeDrawPoints.length > 0) {
+                    drawnLines.push({ 
+                        type: 'freedraw', 
+                        points: [...freeDrawPoints], 
+                        color: '#667eea' 
+                    });
+                    freeDrawPoints = []; // 초기화
+                }
+            } else if (currentTool !== 'eraser') {
+                ctx.save();
+                ctx.translate(panX, panY);
+                ctx.scale(zoomLevel, zoomLevel);
+                ctx.beginPath();
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+                
+                let lineData = null;
+                switch(currentTool) {
+                    case 'line':
+                        drawLine(startX, startY, endX, endY);
+                        lineData = { type: 'line', startX, startY, endX, endY, color: '#667eea' };
+                        break;
+                }
+                
+                if (lineData) {
+                    drawnLines.push(lineData);
+                }
+                ctx.restore();
+            }
+        }
+
+        // 선 그리기
+        function drawLine(x1, y1, x2, y2) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        }
+
+        // 곡선 그리기
+        function drawCurve(x1, y1, x2, y2) {
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2 + 50;
+            
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.quadraticCurveTo(midX, midY, x2, y2);
+            ctx.stroke();
+        }
+
+        // 모든 그려진 선들 다시 그리기
+        function redrawAllLines() {
+            drawnLines.forEach(line => {
+                ctx.strokeStyle = line.color;
+                ctx.lineWidth = 3 / zoomLevel;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                
+                switch(line.type) {
+                    case 'line':
+                        ctx.beginPath();
+                        drawLine(line.startX, line.startY, line.endX, line.endY);
+                        break;
+                    case 'freedraw':
+                        // 자유 그리기 다시 그리기
+                        if (line.points && line.points.length > 1) {
+                            ctx.beginPath();
+                            ctx.moveTo(line.points[0].x, line.points[0].y);
+                            for (let i = 1; i < line.points.length; i++) {
+                                ctx.lineTo(line.points[i].x, line.points[i].y);
+                            }
+                            ctx.stroke();
+                        }
+                        break;
+                }
+            });
+        }
+
+        // 캔버스 다시 그리기 (벽체 정보 포함)
+        function redrawCanvas() {
+            walls.forEach(wall => {
+                if (wall.points) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = wall.color || '#ff6b6b';
+                    ctx.lineWidth = 8 / zoomLevel;
+                    ctx.lineCap = 'round';
+                    ctx.moveTo(wall.points.startX, wall.points.startY);
+                    ctx.lineTo(wall.points.endX, wall.points.endY);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#ff6b6b';
+                    ctx.beginPath();
+                    ctx.arc(wall.points.startX, wall.points.startY, 8 / zoomLevel, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = '#4ecdc4';
+                    ctx.beginPath();
+                    ctx.arc(wall.points.endX, wall.points.endY, 8 / zoomLevel, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    if (wall.name) {
+                        const midX = (wall.points.startX + wall.points.endX) / 2;
+                        const midY = (wall.points.startY + wall.points.endY) / 2;
+                        ctx.fillStyle = '#333';
+                        ctx.font = `bold ${14 / zoomLevel}px Malgun Gothic`;
+                        ctx.textAlign = 'center';
+                        ctx.fillText(wall.name, midX, midY - 15 / zoomLevel);
+                    }
+                }
+            });
+        }
+
+        // 이전 작업 취소 (새로 추가된 함수)
+        function undoLast() {
+            if (drawnLines.length > 0) {
+                drawnLines.pop();
+                redrawAll();
+            } else {
+                alert('취소할 작업이 없습니다.');
+            }
+        }
+
+        // 지우개 기능
+        function eraseAt(x, y) {
+            const eraseRadius = 15;
+            
+            for (let i = drawnLines.length - 1; i >= 0; i--) {
+                const line = drawnLines[i];
+                let shouldErase = false;
+                
+                switch(line.type) {
+                    case 'line':
+                        const distance = distancePointToLine(x, y, line.startX, line.startY, line.endX, line.endY);
+                        if (distance < eraseRadius) {
+                            shouldErase = true;
+                        }
+                        break;
+                    case 'freedraw':
+                        // 자유 그리기 선 위에 있는지 확인
+                        if (line.points && line.points.length > 1) {
+                            for (let j = 0; j < line.points.length - 1; j++) {
+                                const dist = distancePointToLine(
+                                    x, y, 
+                                    line.points[j].x, line.points[j].y,
+                                    line.points[j + 1].x, line.points[j + 1].y
+                                );
+                                if (dist < eraseRadius) {
+                                    shouldErase = true;
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                }
+                
+                if (shouldErase) {
+                    drawnLines.splice(i, 1);
+                }
+            }
+            
+            redrawAll();
+        }
+
+        // 점과 선 사이의 거리 계산
+        function distancePointToLine(px, py, x1, y1, x2, y2) {
+            const A = px - x1;
+            const B = py - y1;
+            const C = x2 - x1;
+            const D = y2 - y1;
+
+            const dot = A * C + B * D;
+            const lenSq = C * C + D * D;
+            let param = -1;
+            if (lenSq !== 0) param = dot / lenSq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = x1;
+                yy = y1;
+            } else if (param > 1) {
+                xx = x2;
+                yy = y2;
+            } else {
+                xx = x1 + param * C;
+                yy = y1 + param * D;
+            }
+
+            const dx = px - xx;
+            const dy = py - yy;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        // 메인 메뉴 함수들
+        function showDrawingTools() {
+            const drawingTools = document.getElementById('drawingTools');
+            const canvasContainer = document.getElementById('canvasContainer');
+            
+            if (drawingTools.style.display === 'none' || drawingTools.style.display === '') {
+                drawingTools.style.display = 'flex';
+                canvasContainer.style.display = 'block';
+                setTimeout(() => {
+                    redrawAll();
+                }, 100);
+            } else {
+                if (currentTool !== 'wall') {
+                    drawingTools.style.display = 'none';
+                    canvasContainer.style.display = 'none';
+                }
+            }
+        }
+
+        // 현장명 저장
+        function saveSiteName() {
+            currentSiteName = document.getElementById('siteName').value;
+            alert('현장명이 저장되었습니다: ' + currentSiteName);
+        }
+
+        // 프로젝트 저장
+        function saveProject() {
+            currentSiteName = document.getElementById('siteName').value;
+            
+            if (!currentSiteName || currentSiteName.trim() === '') {
+                alert('먼저 현장명을 입력하고 저장해주세요!');
+                document.getElementById('siteName').focus();
+                return;
+            }
+            
+            const existingProject = localStorage.getItem('gypsum_project_' + currentSiteName);
+            if (existingProject) {
+                if (confirm('같은 이름의 프로젝트가 있습니다. 덮어쓰시겠습니까?')) {
+                    performSave();
+                }
+            } else {
+                performSave();
+            }
+        }
+
+        // 실제 저장 수행
+        function performSave() {
+            showLoading();
+            
+            // 비동기 처리로 UI 블로킹 방지
+            setTimeout(() => {
+                const projectData = {
+                    siteName: currentSiteName,
+                    drawnLines: drawnLines,
+                    walls: walls,
+                    lastWallHeight: lastWallHeight,
+                    backgroundImage: backgroundImage ? backgroundImage.src : null,
+                    timestamp: new Date().toISOString()
+                };
+                
+                try {
+                    localStorage.setItem('gypsum_project_' + currentSiteName, JSON.stringify(projectData));
+                
+                let projectList = JSON.parse(localStorage.getItem('gypsum_project_list') || '[]');
+                const existingIndex = projectList.findIndex(p => p.name === currentSiteName);
+                
+                if (existingIndex >= 0) {
+                    projectList[existingIndex] = {
+                        name: currentSiteName,
+                        timestamp: new Date().toISOString(),
+                        lastModified: new Date().toLocaleString('ko-KR')
+                    };
+                } else {
+                    projectList.push({
+                        name: currentSiteName,
+                        timestamp: new Date().toISOString(),
+                        lastModified: new Date().toLocaleString('ko-KR')
+                    });
+                }
+                
+                    localStorage.setItem('gypsum_project_list', JSON.stringify(projectList));
+                    
+                    hideLoading();
+                    alert('✅ 프로젝트가 저장되었습니다!\n현장명: ' + currentSiteName);
+                } catch (error) {
+                    hideLoading();
+                    alert('❌ 저장 중 오류가 발생했습니다: ' + error.message);
+                }
+            }, 100);
+        }
+
+        // 불러오기 옵션 표시
+        function showLoadOptions() {
+            document.getElementById('loadOptionsModal').classList.add('show');
+        }
+
+        // 불러오기 옵션 닫기
+        function closeLoadOptions() {
+            document.getElementById('loadOptionsModal').classList.remove('show');
+        }
+
+        // 내부 저장공간에서 불러오기
+        function loadFromInternal() {
+            closeLoadOptions();
+            loadProject();
+        }
+
+        // PC 파일에서 불러오기
+        function loadFromFile() {
+            closeLoadOptions();
+            document.getElementById('projectFileInput').click();
+        }
+
+        // 이미지를 배경으로 불러오기
+        function loadImageAsBackground() {
+            closeLoadOptions();
+            document.getElementById('imageFileInput').click();
+        }
+
+        // PDF 파일 불러오기
+        function loadPDFFile() {
+            closeLoadOptions();
+            document.getElementById('pdfFileInput').click();
+        }
+
+        // 프로젝트 파일 처리
+        function handleProjectFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const projectData = JSON.parse(e.target.result);
+                    
+                    currentSiteName = projectData.siteName || '새 현장';
+                    drawnLines = projectData.drawnLines || [];
+                    walls = projectData.walls || [];
+                    lastWallHeight = projectData.lastWallHeight || 2800;
+                    
+                    document.getElementById('siteName').value = currentSiteName;
+                    document.getElementById('drawingTools').style.display = 'flex';
+                    
+                    redrawAll();
+                    
+                    alert('✅ 프로젝트 파일이 불러와졌습니다!\n현장명: ' + currentSiteName);
+                } catch (error) {
+                    alert('❌ 프로젝트 파일을 읽는 중 오류가 발생했습니다: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 이미지 파일 처리
+        function handleImageFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            // 파일 크기 체크 (10MB 제한)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('❌ 파일이 너무 큽니다. 10MB 이하의 이미지를 선택해주세요.');
+                return;
+            }
+            
+            showLoading();
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // 이미지 크기 최적화 (최대 2000x2000)
+                    const maxSize = 2000;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > maxSize || height > maxSize) {
+                        if (width > height) {
+                            height = (height / width) * maxSize;
+                            width = maxSize;
+                        } else {
+                            width = (width / height) * maxSize;
+                            height = maxSize;
+                        }
+                    }
+                    
+                    // 최적화된 이미지 생성
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = width;
+                    tempCanvas.height = height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(img, 0, 0, width, height);
+                    
+                    const optimizedImg = new Image();
+                    optimizedImg.onload = function() {
+                        backgroundImage = optimizedImg;
+                        document.getElementById('drawingTools').style.display = 'flex';
+                        document.getElementById('canvasContainer').style.display = 'block';
+                        redrawAll();
+                        hideLoading();
+                        alert('✅ 배경 이미지가 설정되었습니다!');
+                    };
+                    optimizedImg.src = tempCanvas.toDataURL('image/jpeg', 0.8);
+                };
+                img.onerror = function() {
+                    hideLoading();
+                    alert('❌ 이미지를 불러올 수 없습니다.');
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = function() {
+                hideLoading();
+                alert('❌ 파일을 읽을 수 없습니다.');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // PDF 파일 처리
+        function handlePDFFile(input) {
+            alert('PDF 기능은 PDF.js 라이브러리가 필요합니다.');
+        }
+
+        // 프로젝트 불러오기
+        function loadProject() {
+            const projectList = JSON.parse(localStorage.getItem('gypsum_project_list') || '[]');
+            
+            if (projectList.length === 0) {
+                alert('저장된 프로젝트가 없습니다.');
+                return;
+            }
+            
+            let listHTML = '<h3>저장된 프로젝트</h3><ul style="list-style: none; padding: 0;">';
+            projectList.forEach((project) => {
+                listHTML += `
+                    <li style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer;"
+                        onclick="loadSelectedProject('${project.name}')">
+                        <strong>${project.name}</strong><br>
+                        <small>${project.lastModified}</small>
+                    </li>
+                `;
+            });
+            listHTML += '</ul>';
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; display: flex; justify-content: center; align-items: center;';
+            modal.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                    ${listHTML}
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        닫기
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // 선택된 프로젝트 불러오기
+        function loadSelectedProject(projectName) {
+            try {
+                const projectData = JSON.parse(localStorage.getItem('gypsum_project_' + projectName));
+                
+                if (!projectData) {
+                    alert('프로젝트 데이터를 찾을 수 없습니다.');
+                    return;
+                }
+                
+                currentSiteName = projectData.siteName || '새 현장';
+                drawnLines = projectData.drawnLines || [];
+                walls = projectData.walls || [];
+                lastWallHeight = projectData.lastWallHeight || 2800;
+                
+                if (projectData.backgroundImage) {
+                    const img = new Image();
+                    img.onload = function() {
+                        backgroundImage = img;
+                        document.getElementById('drawingTools').style.display = 'flex';
+                        document.getElementById('canvasContainer').style.display = 'block';
+                        redrawAll();
+                    };
+                    img.src = projectData.backgroundImage;
+                } else {
+                    backgroundImage = null;
+                    document.getElementById('drawingTools').style.display = 'flex';
+                    document.getElementById('canvasContainer').style.display = 'block';
+                }
+                
+                document.getElementById('siteName').value = currentSiteName;
+                redrawAll();
+                
+                const modal = document.querySelector('div[style*="position: fixed"]');
+                if (modal) modal.remove();
+                
+                alert('✅ 프로젝트가 불러와졌습니다!\n현장명: ' + currentSiteName);
+            } catch (error) {
+                alert('❌ 프로젝트를 불러오는 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        function selectWall() {
+            setTool('wall');
+            document.getElementById('drawingTools').style.display = 'flex';
+            document.getElementById('canvasContainer').style.display = 'block';
+            redrawAll();
+        }
+
+        // 산출내역 보기
+        function showCalculationHistory() {
+            alert('산출내역 기능');
+        }
+
+        // 벽체 입력창 닫기
+        function closeWallInput() {
+            document.getElementById('wallInputModal').classList.remove('show');
+            selectedWall = null;
+            setTool('line');
+            document.getElementById('drawingTools').style.display = 'flex';
+            redrawAll();
+        }
+
+        // 벽체 점 선택
+        function selectWallPoint(e) {
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (clientX - rect.left - panX) / zoomLevel;
+            const y = (clientY - rect.top - panY) / zoomLevel;
+            
+            if (!selectedWall) {
+                selectedWall = {
+                    points: { startX: x, startY: y, endX: x, endY: y },
+                    color: '#ff6b6b'
+                };
+                redrawAll();
+            } else {
+                selectedWall.points.endX = x;
+                selectedWall.points.endY = y;
+                
+                const pixelWidth = Math.abs(selectedWall.points.endX - selectedWall.points.startX);
+                const actualWidth = Math.round(pixelWidth * 10);
+                document.getElementById('wallWidth').value = actualWidth;
+                document.getElementById('wallWidth').readOnly = false;
+                
+                redrawAll();
+                
+                setTimeout(() => {
+                    document.getElementById('wallInputModal').classList.add('show');
+                    document.getElementById('wallHeight').value = lastWallHeight;
+                }, 500);
+            }
+        }
+
+        // 물량 산출
+        function calculateMaterials() {
+            if (walls.length === 0) {
+                alert('먼저 벽체를 그리고 A-B 지점을 지정해주세요!');
+                return;
+            }
+            
+            const resultSection = document.getElementById('resultSection');
+            const resultContent = document.getElementById('resultContent');
+            
+            let totalArea = 0;
+            let totalBoards = 0;
+            let totalJoists = 0;
+            
+            let resultHTML = `
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: 600; margin-right: 10px;">로스율:</label>
+                    <select onchange="updateLossRate(parseFloat(this.value))" style="padding: 5px 10px; border-radius: 5px;">
+                        <option value="0.1" selected>10%</option>
+                        <option value="0.15">15%</option>
+                        <option value="0.2">20%</option>
+                    </select>
+                </div>
+                <table class="result-table">
+                    <thead>
+                        <tr>
+                            <th>벽체명</th>
+                            <th>종류</th>
+                            <th>크기</th>
+                            <th>두께</th>
+                            <th>면적(㎡)</th>
+                            <th>석고보드(장)</th>
+                            <th>각재(개)</th>
+                            <th>비고</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            walls.forEach(wall => {
+                if (wall.width && wall.height) {
+                    const area = (wall.width * wall.height) / 1000000;
+                    const boardArea = getBoardArea(wall.boardSize);
+                    
+                    let boards = (area / boardArea);
+                    boards *= (wall.constructionSide === '2P' ? 2 : 1);
+                    boards *= (wall.faceDirection === '양면' ? 2 : 1);
+                    boards *= (1 + currentLossRate);
+                    
+                    const finalBoards = Math.ceil(boards);
+                    
+                    const joists = Math.ceil((wall.width / wall.joistSpacing) * 
+                        (wall.height / 2400) * (1 + currentLossRate));
+                    
+                    totalArea += area;
+                    totalBoards += finalBoards;
+                    totalJoists += joists;
+                    
+                    resultHTML += `
+                        <tr>
+                            <td>${wall.name || '벽체'}</td>
+                            <td>${wall.boardType || '-'}</td>
+                            <td>${wall.boardSize || '-'}</td>
+                            <td>${wall.boardThickness || '-'}</td>
+                            <td>${area.toFixed(2)}</td>
+                            <td>${finalBoards}</td>
+                            <td>${joists}</td>
+                            <td>${wall.memo || '-'}</td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            resultHTML += `
+                        <tr style="background: #e3f2fd; font-weight: bold;">
+                            <td colspan="4">총합</td>
+                            <td>${totalArea.toFixed(2)}</td>
+                            <td>${totalBoards}</td>
+                            <td>${totalJoists}</td>
+                            <td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+            
+            resultContent.innerHTML = resultHTML;
+            resultSection.classList.add('show');
+        }
+
+        // 로스율 업데이트
+        function updateLossRate(rate) {
+            currentLossRate = rate;
+            if (walls.length > 0) {
+                calculateMaterials();
+            }
+        }
+
+        // 보드 면적 계산
+        function getBoardArea(size) {
+            const sizes = {
+                '900x1800': 1.62,
+                '1200x1800': 2.16,
+                '900x2400': 2.16,
+                '1200x2400': 2.88,
+                '600x2400': 1.44,
+                '1200x2700': 3.24
+            };
+            return sizes[size] || 1.62;
+        }
+
+        // 벽체 이름 클릭 처리
+        function checkWallNameClick(x, y) {
+            return false;
+        }
+
+        // 줌 인
+        function zoomIn() {
+            if (zoomLevel < 3) {
+                zoomLevel += 0.2;
+                redrawAll();
+                updateZoomInfo();
+            }
+        }
+
+        // 줌 아웃
+        function zoomOut() {
+            if (zoomLevel > 0.3) {
+                zoomLevel -= 0.2;
+                redrawAll();
+                updateZoomInfo();
+            }
+        }
+
+        // 줌 리셋
+        function resetZoom() {
+            zoomLevel = 1;
+            panX = 0;
+            panY = 0;
+            redrawAll();
+            updateZoomInfo();
+        }
+
+        // 줌 정보 업데이트
+        function updateZoomInfo() {
+            document.getElementById('zoomInfo').textContent = Math.round(zoomLevel * 100) + '%';
+        }
+
+        // 휠 줌 처리
+        function handleWheelZoom(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+            const newZoom = zoomLevel * zoomFactor;
+            
+            if (newZoom >= 0.3 && newZoom <= 3) {
+                const zoomX = mouseX - panX;
+                const zoomY = mouseY - panY;
+                
+                panX = mouseX - zoomX * zoomFactor;
+                panY = mouseY - zoomY * zoomFactor;
+                
+                zoomLevel = newZoom;
+                redrawAll();
+                updateZoomInfo();
+            }
+        }
+
+        // 팬 시작
+        function startPanning(e) {
+            if (e.button === 1 || e.ctrlKey) {
+                isPanning = true;
+                lastPanX = e.clientX;
+                lastPanY = e.clientY;
+                canvas.style.cursor = 'grabbing';
+                e.preventDefault();
+            }
+        }
+
+        // 팬 처리
+        function handlePanning(e) {
+            if (isPanning) {
+                const deltaX = e.clientX - lastPanX;
+                const deltaY = e.clientY - lastPanY;
+                
+                panX += deltaX;
+                panY += deltaY;
+                
+                lastPanX = e.clientX;
+                lastPanY = e.clientY;
+                
+                redrawAll();
+                e.preventDefault();
+            }
+        }
+
+        // 팬 종료
+        function stopPanning(e) {
+            if (isPanning) {
+                isPanning = false;
+                canvas.style.cursor = 'crosshair';
+            }
+        }
+
+        // 핀치 줌 처리
+        let lastPinchDistance = 0;
+        function handlePinchZoom(e) {
+            if (e.touches.length === 2) {
+                const touch1 = e.touches[0];
+                const touch2 = e.touches[1];
+                
+                const distance = Math.sqrt(
+                    Math.pow(touch2.clientX - touch1.clientX, 2) +
+                    Math.pow(touch2.clientY - touch1.clientY, 2)
+                );
+                
+                if (lastPinchDistance > 0) {
+                    const scale = distance / lastPinchDistance;
+                    const newZoom = zoomLevel * scale;
+                    
+                    if (newZoom >= 0.3 && newZoom <= 3) {
+                        const centerX = (touch1.clientX + touch2.clientX) / 2;
+                        const centerY = (touch1.clientY + touch2.clientY) / 2;
+                        const rect = canvas.getBoundingClientRect();
+                        
+                        const mouseX = centerX - rect.left;
+                        const mouseY = centerY - rect.top;
+                        
+                        const zoomX = mouseX - panX;
+                        const zoomY = mouseY - panY;
+                        
+                        panX = mouseX - zoomX * scale;
+                        panY = mouseY - zoomY * scale;
+                        
+                        zoomLevel = newZoom;
+                        redrawAll();
+                        updateZoomInfo();
+                    }
+                }
+                
+                lastPinchDistance = distance;
+            } else {
+                lastPinchDistance = 0;
+            }
+        }
+
+        // 전체 다시 그리기
+        function redrawAll() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(panX, panY);
+            ctx.scale(zoomLevel, zoomLevel);
+            
+            if (backgroundImage) {
+                ctx.drawImage(backgroundImage, 0, 0, canvas.width / zoomLevel, canvas.height / zoomLevel);
+            }
+            
+            redrawAllLines();
+            redrawCanvas();
+            
+            if (selectedWall && selectedWall.points) {
+                if (selectedWall.points.startX === selectedWall.points.endX && selectedWall.points.startY === selectedWall.points.endY) {
+                    ctx.fillStyle = '#ff6b6b';
+                    ctx.beginPath();
+                    ctx.arc(selectedWall.points.startX, selectedWall.points.startY, 12 / zoomLevel, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3 / zoomLevel;
+                    ctx.beginPath();
+                    ctx.arc(selectedWall.points.startX, selectedWall.points.startY, 12 / zoomLevel, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = `bold ${12 / zoomLevel}px Malgun Gothic`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('A', selectedWall.points.startX, selectedWall.points.startY);
+                } else {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#ff6b6b';
+                    ctx.lineWidth = 6 / zoomLevel;
+                    ctx.lineCap = 'round';
+                    ctx.moveTo(selectedWall.points.startX, selectedWall.points.startY);
+                    ctx.lineTo(selectedWall.points.endX, selectedWall.points.endY);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#ff6b6b';
+                    ctx.beginPath();
+                    ctx.arc(selectedWall.points.startX, selectedWall.points.startY, 10 / zoomLevel, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2 / zoomLevel;
+                    ctx.beginPath();
+                    ctx.arc(selectedWall.points.startX, selectedWall.points.startY, 10 / zoomLevel, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = `bold ${10 / zoomLevel}px Malgun Gothic`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('A', selectedWall.points.startX, selectedWall.points.startY);
+                    
+                    ctx.fillStyle = '#4ecdc4';
+                    ctx.beginPath();
+                    ctx.arc(selectedWall.points.endX, selectedWall.points.endY, 10 / zoomLevel, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2 / zoomLevel;
+                    ctx.beginPath();
+                    ctx.arc(selectedWall.points.endX, selectedWall.points.endY, 10 / zoomLevel, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = `bold ${10 / zoomLevel}px Malgun Gothic`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('B', selectedWall.points.endX, selectedWall.points.endY);
+                }
+            }
+            
+            ctx.restore();
+        }
+
+        // 전화 걸기
+        function callPhone() {
+            window.open('tel:010-4087-1436');
+        }
+    </script>
+</body>
+</html>

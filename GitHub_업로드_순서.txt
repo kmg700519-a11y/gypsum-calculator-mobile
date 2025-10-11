@@ -1,0 +1,29 @@
+GitHub 업로드 순서 (모바일 그리기 도구 가로 배치 수정)
+
+1. GitHub 저장소로 이동
+   https://github.com/kmg700519-a11y/gypsum-calculator-app
+
+2. index.html 파일 클릭
+
+3. 연필 아이콘(편집) 클릭
+
+4. 전체 내용 삭제 (Ctrl+A → Delete)
+
+5. 바탕화면 index.html 파일 열기 → 전체 복사 (Ctrl+A → Ctrl+C)
+
+6. GitHub 편집창에 붙여넣기 (Ctrl+V)
+
+7. "Commit changes" 버튼 클릭
+
+8. 업로드 완료 후 모바일에서 확인
+   https://kmg700519-a11y.github.io/gypsum-calculator-app/
+
+수정 내용:
+- 그리기 도구 버튼 프레임 크기 축소 (min-width: 60px → 45px)
+- 패딩 축소 (8px 5px → 4px 2px)
+- 아이콘 크기 축소 (1.2rem → 1rem)
+- 텍스트 크기 축소 (0.6rem → 0.55rem)
+- 텍스트 내용 단축 ("곡선" → "곡", "지우개" → "지우")
+- 6개 버튼이 가로로 한 줄에 배치되도록 최적화
+
+

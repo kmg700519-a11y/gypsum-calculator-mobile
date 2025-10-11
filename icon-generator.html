@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아이콘 생성기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            background: #f8f9ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-area.dragover {
+            background: #e8ebff;
+            border-color: #764ba2;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .preview {
+            display: none;
+            margin-top: 30px;
+        }
+        
+        .preview.show {
+            display: block;
+        }
+        
+        .preview-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .icon-item {
+            text-align: center;
+        }
+        
+        .icon-item img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 5px;
+        }
+        
+        .icon-item span {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .download-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 PWA 아이콘 생성기</h1>
+        <p class="subtitle">512x512 크기의 이미지를 업로드하세요</p>
+        
+        <div class="upload-area" id="uploadArea">
+            <div style="font-size: 3rem; margin-bottom: 10px;">📷</div>
+            <div style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;">이미지 선택 또는 드래그</div>
+            <div style="color: #999;">PNG, JPG 파일 (권장: 512x512px)</div>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        
+        <div class="preview" id="preview">
+            <div class="preview-title">📦 생성된 아이콘 미리보기</div>
+            <div class="icon-grid" id="iconGrid"></div>
+            <button class="download-btn" onclick="downloadAll()">💾 모든 아이콘 다운로드</button>
+        </div>
+        
+        <div class="info">
+            💡 <strong>사용 방법:</strong><br>
+            1. 512x512 크기의 정사각형 이미지 준비<br>
+            2. 이미지 업로드<br>
+            3. "모든 아이콘 다운로드" 클릭<br>
+            4. 다운로드된 아이콘들을 프로젝트 폴더에 복사
+        </div>
+    </div>
+    
+    <canvas id="canvas"></canvas>
+    
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const iconGrid = document.getElementById('iconGrid');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let originalImage = null;
+        let generatedIcons = [];
+        
+        // 클릭으로 파일 선택
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        // 파일 선택
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+        
+        // 드래그 앤 드롭
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+        
+        // 파일 처리
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    generateIcons();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // 아이콘 생성
+        function generateIcons() {
+            iconGrid.innerHTML = '';
+            generatedIcons = [];
+            
+            sizes.forEach(size => {
+                canvas.width = size;
+                canvas.height = size;
+                
+                // 이미지를 캔버스에 그리기
+                ctx.fillStyle = '#667eea';
+                ctx.fillRect(0, 0, size, size);
+                
+                // 원본 이미지 비율 유지하며 그리기
+                const scale = Math.max(size / originalImage.width, size / originalImage.height);
+                const x = (size - originalImage.width * scale) / 2;
+                const y = (size - originalImage.height * scale) / 2;
+                
+                ctx.drawImage(
+                    originalImage,
+                    x, y,
+                    originalImage.width * scale,
+                    originalImage.height * scale
+                );
+                
+                // Data URL 생성
+                const dataUrl = canvas.toDataURL('image/png');
+                generatedIcons.push({ size, dataUrl });
+                
+                // 미리보기 추가
+                const iconItem = document.createElement('div');
+                iconItem.className = 'icon-item';
+                iconItem.innerHTML = `
+                    <img src="${dataUrl}" alt="${size}x${size}">
+                    <span>${size}x${size}</span>
+                `;
+                iconGrid.appendChild(iconItem);
+            });
+            
+            preview.classList.add('show');
+        }
+        
+        // 모든 아이콘 다운로드
+        function downloadAll() {
+            generatedIcons.forEach(({ size, dataUrl }) => {
+                const link = document.createElement('a');
+                link.download = `icon-${size}.png`;
+                link.href = dataUrl;
+                link.click();
+            });
+            
+            alert('✅ 모든 아이콘 다운로드가 시작되었습니다!\n\n다운로드된 파일들을 프로젝트 폴더에 복사해주세요.');
+        }
+    </script>
+</body>
+</html>
+
