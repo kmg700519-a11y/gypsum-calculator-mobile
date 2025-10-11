@@ -2261,11 +2261,11 @@
                 <div style="margin-bottom: 20px; padding: 15px; background: #f0f4ff; border-radius: 10px; text-align: center;">
                     <label style="font-weight: 600; margin-right: 10px; font-size: 1.1rem;">로스율:</label>
                     <select id="lossRateSelect" onchange="updateLossRate(parseFloat(this.value))" style="padding: 8px 15px; border-radius: 8px; border: 2px solid #667eea; font-size: 1rem;">
-                        <option value="0">0%</option>
-                        <option value="0.05">5%</option>
-                        <option value="0.1" selected>10%</option>
-                        <option value="0.15">15%</option>
-                        <option value="0.2">20%</option>
+                        <option value="0" ${currentLossRate === 0 ? 'selected' : ''}>0%</option>
+                        <option value="0.05" ${currentLossRate === 0.05 ? 'selected' : ''}>5%</option>
+                        <option value="0.1" ${currentLossRate === 0.1 ? 'selected' : ''}>10%</option>
+                        <option value="0.15" ${currentLossRate === 0.15 ? 'selected' : ''}>15%</option>
+                        <option value="0.2" ${currentLossRate === 0.2 ? 'selected' : ''}>20%</option>
                     </select>
                 </div>
                 
@@ -2661,7 +2661,7 @@
         function updateLossRate(rate) {
             currentLossRate = rate;
             if (walls.length > 0) {
-                calculateMaterials();
+                calculateMaterials(); // 산출 결과 다시 계산 및 표시
             }
         }
 
