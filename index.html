@@ -923,18 +923,23 @@
             </div>
             
             <!-- 하단 메뉴 (인쇄/저장/공유) -->
-            <div style="position: sticky; bottom: 0; background: white; border-top: 2px solid #667eea; padding: 10px; display: flex; gap: 8px; justify-content: space-around;">
-                <button class="btn btn-primary" onclick="printResult()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
-                    🖨️ 인쇄
-                </button>
-                <button class="btn btn-primary" onclick="saveAsPDF()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
-                    📄 PDF
-                </button>
-                <button class="btn btn-primary" onclick="saveAsExcel()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
-                    📊 엑셀
-                </button>
-                <button class="btn btn-primary" onclick="shareResult()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
-                    📤 공유
+            <div style="position: sticky; bottom: 0; background: white; border-top: 2px solid #667eea; padding: 10px;">
+                <div style="display: flex; gap: 8px; justify-content: space-around; margin-bottom: 8px;">
+                    <button class="btn btn-primary" onclick="printResult()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
+                        🖨️ 인쇄
+                    </button>
+                    <button class="btn btn-primary" onclick="saveAsPDF()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
+                        📄 PDF
+                    </button>
+                    <button class="btn btn-primary" onclick="saveAsExcel()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
+                        📊 엑셀
+                    </button>
+                    <button class="btn btn-primary" onclick="shareResult()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
+                        📤 공유
+                    </button>
+                </div>
+                <button class="btn btn-secondary" onclick="closeResultModal()" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: bold;">
+                    ✕ 닫기
                 </button>
             </div>
         </div>
