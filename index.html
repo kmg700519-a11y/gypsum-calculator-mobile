@@ -677,7 +677,7 @@
             </div>
 
             <!-- 그리기 도구 - 가로 배치 (수정됨) -->
-            <div class="main-menu" id="drawingTools" style="display: none;">
+            <div class="main-menu" id="drawingTools" style="display: flex;">
                 <div class="menu-item" onclick="setTool('draw')">
                     <div class="menu-icon">✏️</div>
                     <div class="menu-text">그리기</div>
@@ -705,7 +705,7 @@
             </div>
 
             <!-- 캔버스 영역 -->
-            <div class="canvas-container" id="canvasContainer" style="display: none;">
+            <div class="canvas-container" id="canvasContainer" style="display: block;">
                 <div class="canvas-wrapper" id="canvasWrapper">
                     <div class="zoom-controls">
                         <button class="zoom-btn" onclick="zoomIn()" title="확대">+</button>
@@ -886,7 +886,7 @@
 
     <script>
         // 전역 변수
-        let currentTool = 'draw';
+        let currentTool = 'none';  // 초기에는 도구 선택 안됨
         let isDrawing = false;
         let startX, startY;
         let walls = [];
@@ -1004,21 +1004,49 @@
             canvas.addEventListener('touchstart', function(e) {
                 e.preventDefault();
                 if (e.touches.length === 2) {
+                    // 두 손가락: 핀치 줌
                     handlePinchZoom(e);
-                } else {
-                    startDrawing(e);
+                } else if (e.touches.length === 1) {
+                    // 한 손가락: 도구 선택 시 그리기, 아니면 이동
+                    if (currentTool === 'none') {
+                        // 이동 모드
+                        isPanning = true;
+                        lastPanX = e.touches[0].clientX;
+                        lastPanY = e.touches[0].clientY;
+                    } else {
+                        // 그리기 모드
+                        startDrawing(e);
+                    }
                 }
             });
             canvas.addEventListener('touchmove', function(e) {
                 e.preventDefault();
                 if (e.touches.length === 2) {
+                    // 두 손가락: 핀치 줌
                     handlePinchZoom(e);
-                } else {
-                    draw(e);
+                } else if (e.touches.length === 1) {
+                    if (isPanning) {
+                        // 이동 중
+                        const touch = e.touches[0];
+                        const deltaX = touch.clientX - lastPanX;
+                        const deltaY = touch.clientY - lastPanY;
+                        
+                        panX += deltaX;
+                        panY += deltaY;
+                        
+                        lastPanX = touch.clientX;
+                        lastPanY = touch.clientY;
+                        
+                        redrawAll();
+                    } else {
+                        // 그리기 중
+                        draw(e);
+                    }
                 }
             });
             canvas.addEventListener('touchend', function(e) {
                 e.preventDefault();
+                isPanning = false;
                 stopDrawing(e);
             });
             
@@ -1078,13 +1106,19 @@
                 btn.classList.remove('active');
             });
             
+            // 커서 변경
             canvas.className = '';
             if (tool === 'wall') {
                 canvas.classList.add('cursor-circle');
+                canvas.style.cursor = 'pointer';
             } else if (tool === 'eraser') {
                 canvas.classList.add('cursor-pointer');
+                canvas.style.cursor = 'pointer';
+            } else if (tool === 'none') {
+                canvas.style.cursor = 'grab';
             } else {
                 canvas.classList.add('cursor-crosshair');
+                canvas.style.cursor = 'crosshair';
             }
             
             if (['line', 'draw', 'eraser'].includes(tool)) {
@@ -1095,6 +1129,9 @@
         // 그리기 시작
         function startDrawing(e) {
             if (isPanning) return;
+            
+            // 도구가 선택되지 않았으면 그리기 비활성화
+            if (!currentTool || currentTool === 'none') return;
             
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -2109,7 +2146,8 @@
 
         // 팬 시작
         function startPanning(e) {
-            if (e.button === 1 || e.ctrlKey) {
+            // 도구가 선택되지 않았거나, Ctrl 키를 누른 경우 팬 모드
+            if (currentTool === 'none' || e.button === 1 || e.ctrlKey) {
                 isPanning = true;
                 lastPanX = e.clientX;
                 lastPanY = e.clientY;
@@ -2139,7 +2177,14 @@
         function stopPanning(e) {
             if (isPanning) {
                 isPanning = false;
-                canvas.style.cursor = 'crosshair';
+                // 도구에 따라 커서 변경
+                if (currentTool === 'none') {
+                    canvas.style.cursor = 'grab';
+                } else if (currentTool === 'eraser') {
+                    canvas.style.cursor = 'pointer';
+                } else {
+                    canvas.style.cursor = 'crosshair';
+                }
             }
         }
 
