@@ -2182,12 +2182,35 @@
                 `;
             });
             
-            // 전체 총합
+            // 전체 총합 - 종류별로 구분
             resultHTML += `
                     <tr style="background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%); color: white; font-weight: bold;">
-                        <td colspan="4" style="padding: 15px 8px; text-align: center; font-size: 1.1rem; border-right: 2px solid rgba(255,255,255,0.3);">📊 전체 총합</td>
-                        <td style="padding: 15px 8px; text-align: center; font-size: 1.3rem; border-right: 2px solid rgba(255,255,255,0.3);">석고보드 ${totalBoardsAll}장<br/>각재 ${totalJoists}개</td>
-                        <td style="padding: 15px 8px;"></td>
+                        <td colspan="6" style="padding: 15px 8px; text-align: center; font-size: 1.2rem;">📊 발주 총합</td>
+                    </tr>
+            `;
+            
+            // 석고보드 종류별 총합
+            Object.keys(groupedByType).forEach(key => {
+                const group = groupedByType[key];
+                resultHTML += `
+                    <tr style="background: #fff3e0;">
+                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; font-size: 0.9rem;">${group.type}</td>
+                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; font-size: 0.9rem;">${group.size}<br/>${group.thickness}</td>
+                        <td colspan="2" style="padding: 12px 8px; text-align: right; border-right: 1px solid #ddd; font-weight: bold; font-size: 1rem;">합계</td>
+                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; color: #e65100; font-size: 1.2rem;">${group.totalBoards}장</td>
+                        <td style="padding: 12px 8px; text-align: center; font-size: 0.85rem; color: #666;">발주 필요</td>
+                    </tr>
+                `;
+            });
+            
+            // 각재 총합
+            resultHTML += `
+                    <tr style="background: #e8f5e9;">
+                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; font-size: 0.9rem;">각재</td>
+                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; font-size: 0.9rem;">38×89mm</td>
+                        <td colspan="2" style="padding: 12px 8px; text-align: right; border-right: 1px solid #ddd; font-weight: bold; font-size: 1rem;">합계</td>
+                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; color: #2e7d32; font-size: 1.2rem;">${totalJoists}개</td>
+                        <td style="padding: 12px 8px; text-align: center; font-size: 0.85rem; color: #666;">발주 필요</td>
                     </tr>
                 </tbody>
             </table>
