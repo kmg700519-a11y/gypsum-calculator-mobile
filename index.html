@@ -1047,6 +1047,8 @@
             canvas.addEventListener('touchend', function(e) {
                 e.preventDefault();
                 isPanning = false;
+                isPinching = false;
+                lastPinchDistance = 0;
                 stopDrawing(e);
             });
             
@@ -2190,8 +2192,13 @@
 
         // 핀치 줌 처리
         let lastPinchDistance = 0;
+        let isPinching = false;
+        
         function handlePinchZoom(e) {
             if (e.touches.length === 2) {
+                e.preventDefault();
+                isPinching = true;
+                
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
                 
@@ -2204,7 +2211,7 @@
                     const scale = distance / lastPinchDistance;
                     const newZoom = zoomLevel * scale;
                     
-                    if (newZoom >= 0.3 && newZoom <= 3) {
+                    if (newZoom >= 0.3 && newZoom <= 5) {
                         const centerX = (touch1.clientX + touch2.clientX) / 2;
                         const centerY = (touch1.clientY + touch2.clientY) / 2;
                         const rect = canvas.getBoundingClientRect();
@@ -2226,7 +2233,10 @@
                 
                 lastPinchDistance = distance;
             } else {
-                lastPinchDistance = 0;
+                if (isPinching) {
+                    isPinching = false;
+                    lastPinchDistance = 0;
+                }
             }
         }
 
