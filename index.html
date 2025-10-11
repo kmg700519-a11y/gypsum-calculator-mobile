@@ -2254,8 +2254,11 @@
             ctx.translate(panX, panY);
             ctx.scale(zoomLevel, zoomLevel);
             
+            // 배경 이미지도 줌/이동과 함께 움직이도록 수정
             if (backgroundImage) {
-                ctx.drawImage(backgroundImage, 0, 0, canvas.width / zoomLevel, canvas.height / zoomLevel);
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+                ctx.drawImage(backgroundImage, 0, 0, imgWidth, imgHeight);
             }
             
             redrawAllLines();
