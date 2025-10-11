@@ -214,8 +214,9 @@
         .site-name-container {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 10px;
             justify-content: center;
+            flex-wrap: nowrap;
         }
 
         .site-label {
@@ -225,11 +226,12 @@
         }
 
         .site-input {
-            padding: 12px 20px;
+            padding: 10px 15px;
             border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            min-width: 200px;
+            border-radius: 8px;
+            font-size: 1rem;
+            flex: 1;
+            min-width: 150px;
             transition: border-color 0.3s ease;
         }
 
@@ -238,21 +240,6 @@
             border-color: #667eea;
         }
 
-        .site-save-btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 10px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .site-save-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
 
         /* 캔버스 영역 */
         .canvas-container {
@@ -577,12 +564,17 @@
         
         @media (max-width: 480px) {
             .site-name-container {
-                flex-direction: column;
-                gap: 10px;
+                gap: 5px;
+            }
+            
+            .site-label {
+                font-size: 1rem;
             }
             
             .site-input {
-                min-width: 100%;
+                min-width: 120px;
+                padding: 8px 12px;
+                font-size: 0.9rem;
             }
             
             .menu-item {
@@ -645,7 +637,7 @@
                 <div class="site-name-container">
                     <label class="site-label">현장명:</label>
                     <input type="text" class="site-input" id="siteName" placeholder="현장명을 입력하세요" value="새 현장">
-                    <button class="site-save-btn" onclick="saveSiteName()">💾</button>
+                    <input type="text" class="site-input" id="additionalText" placeholder="추가 정보 입력">
                 </div>
             </div>
 
@@ -1367,10 +1359,10 @@
             }
         }
 
-        // 현장명 저장
+        // 현장명 저장 (메뉴의 저장하기 버튼에서 사용)
         function saveSiteName() {
             currentSiteName = document.getElementById('siteName').value;
-            alert('현장명이 저장되었습니다: ' + currentSiteName);
+            return currentSiteName;
         }
         
         // 벽체 정보 즉시 localStorage에 저장
