@@ -2092,9 +2092,9 @@
                 }
             });
             
-            // HTML 생성
+            // 전체를 하나의 표로 생성
             let resultHTML = `
-                <div style="margin-bottom: 20px; padding: 15px; background: #f0f4ff; border-radius: 10px;">
+                <div style="margin-bottom: 20px; padding: 15px; background: #f0f4ff; border-radius: 10px; text-align: center;">
                     <label style="font-weight: 600; margin-right: 10px; font-size: 1.1rem;">로스율:</label>
                     <select onchange="updateLossRate(parseFloat(this.value))" style="padding: 8px 15px; border-radius: 8px; border: 2px solid #667eea; font-size: 1rem;">
                         <option value="0.1" selected>10%</option>
@@ -2102,96 +2102,95 @@
                         <option value="0.2">20%</option>
                     </select>
                 </div>
+                
+                <table style="width: 100%; border-collapse: collapse; box-shadow: 0 4px 8px rgba(0,0,0,0.1); background: white; border-radius: 10px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <th style="padding: 12px 8px; text-align: center; font-size: 0.9rem; border-right: 1px solid rgba(255,255,255,0.2);">종류</th>
+                            <th style="padding: 12px 8px; text-align: center; font-size: 0.9rem; border-right: 1px solid rgba(255,255,255,0.2);">크기</th>
+                            <th style="padding: 12px 8px; text-align: left; font-size: 0.9rem; border-right: 1px solid rgba(255,255,255,0.2);">벽체명</th>
+                            <th style="padding: 12px 8px; text-align: center; font-size: 0.9rem; border-right: 1px solid rgba(255,255,255,0.2);">면적(㎡)</th>
+                            <th style="padding: 12px 8px; text-align: center; font-size: 0.9rem; border-right: 1px solid rgba(255,255,255,0.2);">수량(장)</th>
+                            <th style="padding: 12px 8px; text-align: center; font-size: 0.9rem;">비고</th>
+                        </tr>
+                    </thead>
+                    <tbody>
             `;
             
+            let totalBoardsAll = 0;
+            let totalJoists = 0;
+            let rowColor = true;
+            
             // 석고보드 종류별 표시
-            Object.keys(groupedByType).forEach(key => {
+            Object.keys(groupedByType).forEach((key, idx) => {
                 const group = groupedByType[key];
-                resultHTML += `
-                    <div style="margin-bottom: 25px; border: 2px solid #667eea; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; font-weight: bold; font-size: 1.1rem;">
-                            📦 ${group.type} / ${group.size} / ${group.thickness}
-                        </div>
-                        <div style="background: white;">
-                `;
+                const rowCount = group.walls.length;
                 
-                group.walls.forEach(wall => {
+                group.walls.forEach((wall, wallIdx) => {
+                    rowColor = !rowColor;
+                    const bgColor = rowColor ? '#f8f9fa' : 'white';
+                    
                     resultHTML += `
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; font-size: 1rem; color: #333; margin-bottom: 3px;">${wall.name || '벽체'}</div>
-                                <div style="font-size: 0.85rem; color: #666;">면적: ${wall.area.toFixed(2)}㎡${wall.memo ? ' | ' + wall.memo : ''}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 1.3rem; font-weight: bold; color: #667eea;">${wall.boards}<span style="font-size: 0.9rem;">장</span></div>
-                            </div>
-                        </div>
+                        <tr style="background: ${bgColor}; border-bottom: 1px solid #eee;">
+                    `;
+                    
+                    // 종류와 크기는 첫 번째 행에만 표시 (rowspan)
+                    if (wallIdx === 0) {
+                        resultHTML += `
+                            <td rowspan="${rowCount}" style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: 600; vertical-align: middle; font-size: 0.85rem;">${group.type}</td>
+                            <td rowspan="${rowCount}" style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: 600; vertical-align: middle; font-size: 0.85rem;">${group.size}<br/>${group.thickness}</td>
+                        `;
+                    }
+                    
+                    resultHTML += `
+                            <td style="padding: 10px 8px; text-align: left; border-right: 1px solid #ddd; font-weight: 500; font-size: 0.9rem;">${wall.name || '벽체'}</td>
+                            <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-size: 0.9rem;">${wall.area.toFixed(2)}</td>
+                            <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; color: #667eea; font-size: 1rem;">${wall.boards}</td>
+                            <td style="padding: 10px 8px; text-align: center; font-size: 0.85rem; color: #666;">${wall.memo || '-'}</td>
+                        </tr>
                     `;
                 });
                 
+                totalBoardsAll += group.totalBoards;
+                
+                // 소계 행
                 resultHTML += `
-                        <div style="background: #e3f2fd; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
-                            <div style="font-weight: bold; font-size: 1.1rem;">소계</div>
-                            <div style="font-size: 1.5rem; font-weight: bold; color: #1976d2;">${group.totalBoards}<span style="font-size: 1rem;">장</span></div>
-                        </div>
-                    </div>
-                </div>
+                    <tr style="background: #e3f2fd; border-bottom: 2px solid #667eea;">
+                        <td colspan="4" style="padding: 10px 8px; text-align: right; font-weight: bold; border-right: 1px solid #ddd; font-size: 0.95rem;">소계</td>
+                        <td style="padding: 10px 8px; text-align: center; font-weight: bold; color: #1976d2; border-right: 1px solid #ddd; font-size: 1.1rem;">${group.totalBoards}</td>
+                        <td style="padding: 10px 8px;"></td>
+                    </tr>
                 `;
             });
             
             // 각재 정보
-            resultHTML += `
-                <div style="margin-bottom: 25px; border: 2px solid #4caf50; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-                    <div style="background: linear-gradient(135deg, #4caf50 0%, #81c784 100%); color: white; padding: 15px; font-weight: bold; font-size: 1.1rem;">
-                        📏 각재 (38×89mm)
-                    </div>
-                    <div style="background: white;">
-            `;
-            
-            let totalJoists = 0;
             Object.keys(groupedBySize).forEach(key => {
                 const group = groupedBySize[key];
                 totalJoists += group.totalJoists;
+                rowColor = !rowColor;
+                const bgColor = rowColor ? '#f8f9fa' : 'white';
+                
                 resultHTML += `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee;">
-                        <div style="font-weight: 600; font-size: 1rem;">간격 ${group.spacing}mm</div>
-                        <div style="font-size: 1.3rem; font-weight: bold; color: #4caf50;">${group.totalJoists}<span style="font-size: 0.9rem;">개</span></div>
-                    </div>
+                    <tr style="background: ${bgColor}; border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: 600; font-size: 0.85rem;">각재</td>
+                        <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: 600; font-size: 0.85rem;">38×89mm</td>
+                        <td style="padding: 10px 8px; text-align: left; border-right: 1px solid #ddd; font-size: 0.9rem;">간격 ${group.spacing}mm</td>
+                        <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-size: 0.9rem;">-</td>
+                        <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; color: #4caf50; font-size: 1rem;">${group.totalJoists}<span style="font-size: 0.8rem;">개</span></td>
+                        <td style="padding: 10px 8px; text-align: center; font-size: 0.85rem;">-</td>
+                    </tr>
                 `;
             });
             
-            resultHTML += `
-                    <div style="background: #e8f5e9; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
-                        <div style="font-weight: bold; font-size: 1.1rem;">총 각재</div>
-                        <div style="font-size: 1.5rem; font-weight: bold; color: #2e7d32;">${totalJoists}<span style="font-size: 1rem;">개</span></div>
-                    </div>
-                </div>
-            </div>
-            `;
-            
             // 전체 총합
-            let totalBoardsAll = 0;
-            Object.keys(groupedByType).forEach(key => {
-                totalBoardsAll += groupedByType[key].totalBoards;
-            });
-            
             resultHTML += `
-                <div style="margin-top: 30px; padding: 20px; background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%); border-radius: 12px; box-shadow: 0 6px 12px rgba(0,0,0,0.15);">
-                    <div style="text-align: center; color: white;">
-                        <div style="font-size: 1.3rem; font-weight: bold; margin-bottom: 15px;">📊 전체 총합</div>
-                        <div style="display: flex; justify-content: space-around; align-items: center;">
-                            <div>
-                                <div style="font-size: 0.9rem; margin-bottom: 5px;">석고보드</div>
-                                <div style="font-size: 2rem; font-weight: bold;">${totalBoardsAll}<span style="font-size: 1.2rem;">장</span></div>
-                            </div>
-                            <div style="width: 2px; height: 50px; background: rgba(255,255,255,0.3);"></div>
-                            <div>
-                                <div style="font-size: 0.9rem; margin-bottom: 5px;">각재</div>
-                                <div style="font-size: 2rem; font-weight: bold;">${totalJoists}<span style="font-size: 1.2rem;">개</span></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <tr style="background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%); color: white; font-weight: bold;">
+                        <td colspan="4" style="padding: 15px 8px; text-align: center; font-size: 1.1rem; border-right: 2px solid rgba(255,255,255,0.3);">📊 전체 총합</td>
+                        <td style="padding: 15px 8px; text-align: center; font-size: 1.3rem; border-right: 2px solid rgba(255,255,255,0.3);">석고보드 ${totalBoardsAll}장<br/>각재 ${totalJoists}개</td>
+                        <td style="padding: 15px 8px;"></td>
+                    </tr>
+                </tbody>
+            </table>
             `;
             
             resultModalContent.innerHTML = resultHTML;
