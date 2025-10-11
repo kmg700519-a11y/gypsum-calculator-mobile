@@ -1002,30 +1002,36 @@
             canvas.addEventListener('mouseup', stopPanning);
             
             canvas.addEventListener('touchstart', function(e) {
-                e.preventDefault();
                 if (e.touches.length === 2) {
-                    // 두 손가락: 핀치 줌
+                    // 두 손가락: 핀치 줌 시작
+                    e.preventDefault();
+                    isPanning = false;  // 이동 중지
+                    isPinching = true;
+                    lastPinchDistance = 0;  // 초기화
                     handlePinchZoom(e);
                 } else if (e.touches.length === 1) {
+                    e.preventDefault();
                     // 한 손가락: 도구 선택 시 그리기, 아니면 이동
                     if (currentTool === 'none') {
                         // 이동 모드
                         isPanning = true;
+                        isPinching = false;
                         lastPanX = e.touches[0].clientX;
                         lastPanY = e.touches[0].clientY;
                     } else {
                         // 그리기 모드
+                        isPinching = false;
                         startDrawing(e);
                     }
                 }
             });
             canvas.addEventListener('touchmove', function(e) {
-                e.preventDefault();
                 if (e.touches.length === 2) {
-                    // 두 손가락: 핀치 줌
+                    // 두 손가락: 핀치 줌 (preventDefault는 함수 내부에서)
                     handlePinchZoom(e);
                 } else if (e.touches.length === 1) {
-                    if (isPanning) {
+                    e.preventDefault();
+                    if (isPanning && !isPinching) {
                         // 이동 중
                         const touch = e.touches[0];
                         const deltaX = touch.clientX - lastPanX;
@@ -1038,7 +1044,7 @@
                         lastPanY = touch.clientY;
                         
                         redrawAll();
-                    } else {
+                    } else if (!isPinching) {
                         // 그리기 중
                         draw(e);
                     }
