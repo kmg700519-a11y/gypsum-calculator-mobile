@@ -11,6 +11,12 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script>
+        // PDF.js workerSrc 설정
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        }
+    </script>
     <title>석고보드·각재 물량 산출기</title>
     <style>
         * {
@@ -1540,10 +1546,15 @@
             const file = input.files[0];
             if (!file) return;
             
-            // PDF.js 라이브러리 확인
+            // PDF.js 라이브러리 확인 및 초기화
             if (typeof pdfjsLib === 'undefined') {
-                alert('❌ PDF.js 라이브러리를 로드할 수 없습니다.\n잠시 후 다시 시도해주세요.');
+                alert('❌ PDF.js 라이브러리를 로드할 수 없습니다.\n페이지를 새로고침한 후 다시 시도해주세요.');
                 return;
+            }
+            
+            // workerSrc가 설정되지 않았으면 설정
+            if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
             }
             
             showLoading();
