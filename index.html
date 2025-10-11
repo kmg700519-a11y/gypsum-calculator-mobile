@@ -806,20 +806,20 @@
                     </div>
                 </div>
                 
+                <div class="form-group">
+                    <label class="form-label">시공면 선택</label>
+                    <select class="form-select" id="faceDirection" required>
+                        <option value="단면">단면 (한쪽만 시공)</option>
+                        <option value="양면">양면 (양쪽 모두 시공)</option>
+                    </select>
+                </div>
+                
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">시공면</label>
+                        <label class="form-label">석고보드 겹수</label>
                         <select class="form-select" id="constructionSide" required>
-                            <option value="1P">1P</option>
-                            <option value="2P">2P</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">면방향</label>
-                        <select class="form-select" id="faceDirection" required>
-                            <option value="전면">전면</option>
-                            <option value="양면">양면</option>
+                            <option value="1P">1P (1겹)</option>
+                            <option value="2P">2P (2겹)</option>
                         </select>
                     </div>
                 </div>
@@ -2143,8 +2143,12 @@
                         // 3. 최하단 가로 1줄 (벽체 길이만큼)
                         const bottomHorizontal = Math.ceil(wall.width / 2700); // 2700mm 기준
                         
-                        // 4. 총 각재 수량 (로스율 포함)
-                        joists = Math.ceil((verticalJoists + topHorizontal + bottomHorizontal) * (1 + currentLossRate));
+                        // 4. 양면이면 2배
+                        let totalWoodJoists = verticalJoists + topHorizontal + bottomHorizontal;
+                        totalWoodJoists *= (wall.faceDirection === '양면' ? 2 : 1);
+                        
+                        // 5. 로스율 포함
+                        joists = Math.ceil(totalWoodJoists * (1 + currentLossRate));
                     } 
                     // 경량철골 계산 (러너와 스터드 분리)
                     let steelRunner = 0;
@@ -2154,13 +2158,16 @@
                         const spacing = 450; // 경량철골은 450mm 고정
                         
                         // 1. 러너 (상하단 가로): 벽체 길이만큼 × 2 (상단 + 하단)
-                        const runnerPieces = Math.ceil(wall.width / wall.steelLength) * 2;
+                        let runnerPieces = Math.ceil(wall.width / wall.steelLength) * 2;
+                        runnerPieces *= (wall.faceDirection === '양면' ? 2 : 1); // 양면이면 2배
                         steelRunner = Math.ceil(runnerPieces * (1 + currentLossRate));
                         
                         // 2. 스터드 (세로): 간격으로 나눈 개수 + 1 (양 끝 포함)
                         const studCount = Math.floor(wall.width / spacing) + 1;
                         const piecesPerStud = Math.ceil(wall.height / wall.steelLength);
-                        steelStud = Math.ceil(studCount * piecesPerStud * (1 + currentLossRate));
+                        let totalSteelStud = studCount * piecesPerStud;
+                        totalSteelStud *= (wall.faceDirection === '양면' ? 2 : 1); // 양면이면 2배
+                        steelStud = Math.ceil(totalSteelStud * (1 + currentLossRate));
                         
                         // 3. 총 개수 (표시용)
                         joists = steelRunner + steelStud;
