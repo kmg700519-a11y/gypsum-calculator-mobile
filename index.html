@@ -731,7 +731,10 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 15px;">
                 <button class="btn btn-primary" onclick="loadFromInternal()">
-                    💾 내부 저장공간에서 불러오기
+                    🏗️ 현장 불러오기
+                </button>
+                <button class="btn btn-primary" onclick="loadCalculationHistory()">
+                    📊 산출내역 불러오기
                 </button>
                 <button class="btn btn-primary" onclick="loadFromFile()">
                     📁 내 기기에서 불러오기
@@ -1663,6 +1666,18 @@
                     timestamp: new Date().toISOString()
                 };
                 
+                // 산출 결과도 함께 저장 (벽체 정보가 있을 때만)
+                if (walls.length > 0) {
+                    const calculationData = {
+                        siteName: currentSiteName,
+                        walls: walls,
+                        lossRate: currentLossRate,
+                        timestamp: new Date().toISOString(),
+                        lastModified: new Date().toLocaleString('ko-KR')
+                    };
+                    localStorage.setItem('gypsum_calculation_' + currentSiteName, JSON.stringify(calculationData));
+                }
+                
                 try {
                     localStorage.setItem('gypsum_project_' + currentSiteName, JSON.stringify(projectData));
                 
@@ -1705,10 +1720,84 @@
             document.getElementById('loadOptionsModal').classList.remove('show');
         }
 
-        // 내부 저장공간에서 불러오기
+        // 현장 불러오기 (현장명만 불러오기)
         function loadFromInternal() {
             closeLoadOptions();
             loadProject();
+        }
+        
+        // 산출내역 불러오기 (저장된 산출 결과 조회)
+        function loadCalculationHistory() {
+            closeLoadOptions();
+            
+            const projectList = JSON.parse(localStorage.getItem('gypsum_project_list') || '[]');
+            
+            if (projectList.length === 0) {
+                alert('저장된 산출내역이 없습니다.');
+                return;
+            }
+            
+            let listHTML = '<h3>저장된 산출내역</h3><ul style="list-style: none; padding: 0;">';
+            projectList.forEach((project) => {
+                // 산출 데이터가 있는 현장만 표시
+                const calcData = localStorage.getItem('gypsum_calculation_' + project.name);
+                if (calcData) {
+                    const data = JSON.parse(calcData);
+                    listHTML += `
+                        <li style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer;"
+                            onclick="loadSavedCalculation('${project.name}')">
+                            <strong>📊 ${project.name}</strong><br>
+                            <small>${data.lastModified || project.lastModified}</small>
+                        </li>
+                    `;
+                }
+            });
+            listHTML += '</ul>';
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; display: flex; justify-content: center; align-items: center;';
+            modal.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+                    ${listHTML}
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="margin-top: 20px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                        닫기
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        // 저장된 산출 결과 불러오기
+        function loadSavedCalculation(projectName) {
+            try {
+                const calcDataStr = localStorage.getItem('gypsum_calculation_' + projectName);
+                
+                if (!calcDataStr) {
+                    alert('해당 현장의 산출 데이터를 찾을 수 없습니다.');
+                    return;
+                }
+                
+                const calcData = JSON.parse(calcDataStr);
+                
+                // 현장명 설정
+                currentSiteName = projectName;
+                document.getElementById('siteName').value = currentSiteName;
+                
+                // 벽체 데이터 복원
+                walls = calcData.walls || [];
+                currentLossRate = calcData.lossRate || 0.1;
+                
+                // 모달 닫기
+                const modal = document.querySelector('div[style*="position: fixed"]');
+                if (modal) modal.remove();
+                
+                // 산출 결과 바로 표시
+                calculateMaterials();
+                
+            } catch (error) {
+                alert('❌ 산출내역을 불러오는 중 오류가 발생했습니다: ' + error.message);
+            }
         }
 
         // 내 기기에서 불러오기 (모든 경로에서 검색 가능)
