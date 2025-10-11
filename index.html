@@ -916,10 +916,26 @@
             </div>
             
             <!-- 스크롤 가능한 결과 영역 -->
-            <div id="resultScrollContainer" style="overflow: auto; height: calc(100vh - 130px); position: relative; touch-action: pan-x pan-y;">
+            <div id="resultScrollContainer" style="overflow: auto; height: calc(100vh - 200px); position: relative; touch-action: pan-x pan-y;">
                 <div id="resultModalContent" style="transform-origin: top left; transition: transform 0.1s ease-out; padding: 20px;">
                     <!-- 결과 내용이 여기에 표시됩니다 -->
                 </div>
+            </div>
+            
+            <!-- 하단 메뉴 (인쇄/저장/공유) -->
+            <div style="position: sticky; bottom: 0; background: white; border-top: 2px solid #667eea; padding: 10px; display: flex; gap: 8px; justify-content: space-around;">
+                <button class="btn btn-primary" onclick="printResult()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
+                    🖨️ 인쇄
+                </button>
+                <button class="btn btn-primary" onclick="saveAsPDF()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
+                    📄 PDF
+                </button>
+                <button class="btn btn-primary" onclick="saveAsExcel()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
+                    📊 엑셀
+                </button>
+                <button class="btn btn-primary" onclick="shareResult()" style="flex: 1; padding: 10px; font-size: 0.9rem;">
+                    📤 공유
+                </button>
             </div>
         </div>
     </div>
@@ -2414,6 +2430,123 @@
             if (zoomInfoEl) {
                 zoomInfoEl.textContent = Math.round(resultZoomLevel * 100) + '%';
             }
+        }
+        
+        // 인쇄하기
+        function printResult() {
+            window.print();
+        }
+        
+        // PDF로 저장
+        function saveAsPDF() {
+            alert('📄 PDF 저장 기능\n\n브라우저의 인쇄 기능을 사용하여\n"PDF로 저장"을 선택하세요.');
+            window.print();
+        }
+        
+        // 엑셀로 저장
+        function saveAsExcel() {
+            const resultContent = document.getElementById('resultModalContent');
+            const tables = resultContent.getElementsByTagName('table');
+            
+            if (tables.length === 0) {
+                alert('저장할 데이터가 없습니다.');
+                return;
+            }
+            
+            // 테이블을 CSV 형식으로 변환
+            let csv = '\uFEFF'; // UTF-8 BOM
+            csv += `현장명: ${currentSiteName}\n`;
+            csv += `작성일: ${new Date().toLocaleString('ko-KR')}\n\n`;
+            
+            const table = tables[0];
+            const rows = table.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td, th');
+                const rowData = [];
+                cells.forEach(cell => {
+                    let text = cell.textContent.trim();
+                    text = text.replace(/"/g, '""'); // 따옴표 이스케이프
+                    rowData.push(`"${text}"`);
+                });
+                csv += rowData.join(',') + '\n';
+            });
+            
+            // CSV 파일 다운로드
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `${currentSiteName}_산출결과.csv`);
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            alert('✅ 엑셀 파일이 다운로드되었습니다!\n파일명: ' + currentSiteName + '_산출결과.csv');
+        }
+        
+        // 공유하기
+        function shareResult() {
+            const options = `
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button class="btn btn-primary" onclick="shareKakao()">💬 카카오톡 전송</button>
+                    <button class="btn btn-primary" onclick="shareSMS()">💌 문자 전송</button>
+                    <button class="btn btn-primary" onclick="shareEmail()">📧 이메일 전송</button>
+                    <button class="btn btn-secondary" onclick="closeShareOptions()">취소</button>
+                </div>
+            `;
+            
+            const modal = document.createElement('div');
+            modal.id = 'shareOptionsModal';
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; display: flex; justify-content: center; align-items: center;';
+            modal.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%;">
+                    <h3 style="text-align: center; margin-bottom: 20px;">공유 방법 선택</h3>
+                    ${options}
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        // 공유 옵션 닫기
+        function closeShareOptions() {
+            const modal = document.getElementById('shareOptionsModal');
+            if (modal) modal.remove();
+        }
+        
+        // 카카오톡 전송
+        function shareKakao() {
+            closeShareOptions();
+            alert('💬 카카오톡 공유\n\n1. 엑셀 파일을 먼저 저장하세요\n2. 카카오톡에서 파일 전송을 선택하세요\n3. 저장된 CSV 파일을 전송하세요');
+        }
+        
+        // 문자 전송
+        function shareSMS() {
+            closeShareOptions();
+            
+            // 산출 결과 요약 텍스트 생성
+            let summaryText = `[${currentSiteName} 산출 결과]\n\n`;
+            
+            // 간단한 요약만 포함
+            summaryText += '상세 내용은 파일을 참고해주세요.';
+            
+            // SMS 링크 생성
+            const smsBody = encodeURIComponent(summaryText);
+            window.location.href = `sms:?body=${smsBody}`;
+        }
+        
+        // 이메일 전송
+        function shareEmail() {
+            closeShareOptions();
+            
+            const subject = encodeURIComponent(`[${currentSiteName}] 석고보드·각재 물량 산출 결과`);
+            const body = encodeURIComponent(`${currentSiteName} 프로젝트의 산출 결과를 첨부 파일로 보내드립니다.\n\n작성일: ${new Date().toLocaleString('ko-KR')}`);
+            
+            window.location.href = `mailto:?subject=${subject}&body=${body}`;
+            
+            alert('📧 이메일 앱이 열립니다.\n엑셀 파일을 먼저 저장한 후 첨부하세요.');
         }
 
         // 로스율 업데이트
