@@ -636,7 +636,7 @@
             <div class="site-info">
                 <div class="site-name-container">
                     <label class="site-label">현장명:</label>
-                    <input type="text" class="site-input" id="siteName" placeholder="현장명을 입력하세요" value="새 현장">
+                    <input type="text" class="site-input" id="siteName" placeholder="새현장" value="">
                     <input type="text" class="site-input" id="additionalText" placeholder="추가 정보 입력">
                 </div>
             </div>
@@ -1361,8 +1361,30 @@
 
         // 현장명 저장 (메뉴의 저장하기 버튼에서 사용)
         function saveSiteName() {
-            currentSiteName = document.getElementById('siteName').value;
+            let siteName = document.getElementById('siteName').value.trim();
+            
+            // 입력이 없으면 자동으로 새현장1, 새현장2... 생성
+            if (!siteName || siteName === '') {
+                siteName = generateAutoSiteName();
+                document.getElementById('siteName').value = siteName;
+            }
+            
+            currentSiteName = siteName;
             return currentSiteName;
+        }
+        
+        // 자동 현장명 생성 (새현장1, 새현장2, 새현장3...)
+        function generateAutoSiteName() {
+            const projectList = JSON.parse(localStorage.getItem('gypsum_project_list') || '[]');
+            let counter = 1;
+            let newName;
+            
+            do {
+                newName = `새현장${counter}`;
+                counter++;
+            } while (projectList.some(project => project.name === newName));
+            
+            return newName;
         }
         
         // 벽체 정보 즉시 localStorage에 저장
@@ -1385,13 +1407,8 @@
 
         // 프로젝트 저장
         function saveProject() {
-            currentSiteName = document.getElementById('siteName').value;
-            
-            if (!currentSiteName || currentSiteName.trim() === '') {
-                alert('먼저 현장명을 입력하고 저장해주세요!');
-                document.getElementById('siteName').focus();
-                return;
-            }
+            // 자동 현장명 생성 (입력이 없으면)
+            currentSiteName = saveSiteName();
             
             const existingProject = localStorage.getItem('gypsum_project_' + currentSiteName);
             if (existingProject) {
