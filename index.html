@@ -707,12 +707,6 @@
             <!-- 캔버스 영역 -->
             <div class="canvas-container" id="canvasContainer" style="display: block;">
                 <div class="canvas-wrapper" id="canvasWrapper">
-                    <div class="zoom-controls">
-                        <button class="zoom-btn" onclick="zoomIn()" title="확대">+</button>
-                        <button class="zoom-btn" onclick="zoomOut()" title="축소">−</button>
-                        <button class="zoom-btn" onclick="resetZoom()" title="초기화">⌂</button>
-                        <div class="zoom-info" id="zoomInfo">100%</div>
-                    </div>
                     <canvas id="drawingCanvas" width="800" height="500"></canvas>
                 </div>
             </div>
@@ -2468,9 +2462,10 @@
             updateZoomInfo();
         }
 
-        // 줌 정보 업데이트
+        // 줌 정보 업데이트 (줌 버튼 제거됨 - 함수는 유지)
         function updateZoomInfo() {
-            document.getElementById('zoomInfo').textContent = Math.round(zoomLevel * 100) + '%';
+            // 줌 컨트롤이 제거되었으므로 아무것도 하지 않음
+            // 함수는 기존 코드 호환성을 위해 유지
         }
 
         // 휠 줌 처리
