@@ -10,6 +10,7 @@
     <meta name="description" content="석고보드·각재 물량 산출기 - 모바일 최적화">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <title>석고보드·각재 물량 산출기</title>
     <style>
         * {
@@ -847,6 +848,31 @@
         </div>
     </div>
 
+    <!-- PDF 뷰어 모달 -->
+    <div class="wall-input-modal" id="pdfViewerModal">
+        <div class="modal-content" style="max-width: 90vw; max-height: 90vh;">
+            <div class="modal-header">
+                <h2 class="modal-title">PDF 뷰어</h2>
+                <button onclick="closePDFViewer()" style="position: absolute; right: 10px; top: 10px; background: none; border: none; font-size: 24px; cursor: pointer;">&times;</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; gap: 10px; align-items: center; justify-content: center;">
+                    <button class="btn btn-secondary" onclick="previousPage()" id="prevPageBtn">◀ 이전</button>
+                    <span id="pageInfo">페이지 1 / 1</span>
+                    <button class="btn btn-secondary" onclick="nextPage()" id="nextPageBtn">다음 ▶</button>
+                </div>
+                <div style="text-align: center;">
+                    <button class="btn btn-primary" onclick="zoomOut()" id="zoomOutBtn">🔍- 축소</button>
+                    <span id="zoomInfo" style="margin: 0 10px;">100%</span>
+                    <button class="btn btn-primary" onclick="zoomIn()" id="zoomInBtn">🔍+ 확대</button>
+                </div>
+                <div style="border: 1px solid #ddd; overflow: auto; max-height: 70vh; background: #f5f5f5;">
+                    <canvas id="pdfCanvas" style="display: block; margin: 0 auto;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 숨겨진 파일 입력 요소 -->
     <input type="file" id="projectFileInput" accept=".json,application/json,text/json" style="display: none;" onchange="handleProjectFile(this)">
     <input type="file" id="imageFileInput" accept="image/*" style="display: none;" onchange="handleImageFile(this)">
@@ -876,6 +902,15 @@
         // 이전 입력값 저장 변수
         let lastWallHeight = 2800;
         let currentLossRate = 0.1;
+        
+        // PDF 뷰어 관련 변수
+        let pdfDoc = null;
+        let currentPage = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.0;
+        let canvas = null;
+        let ctx = null;
 
         // PWA 서비스 워커 등록
         if ('serviceWorker' in navigator) {
@@ -1498,6 +1533,113 @@
         function loadPDFFile() {
             closeLoadOptions();
             document.getElementById('pdfFileInput').click();
+        }
+        
+        // PDF 파일 처리
+        function handlePDFFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            showLoading();
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const typedArray = new Uint8Array(e.target.result);
+                
+                pdfjsLib.getDocument(typedArray).promise.then(function(pdf) {
+                    pdfDoc = pdf;
+                    currentPage = 1;
+                    scale = 1.0;
+                    
+                    // PDF 뷰어 모달 표시
+                    document.getElementById('pdfViewerModal').classList.add('show');
+                    
+                    // 캔버스 초기화
+                    canvas = document.getElementById('pdfCanvas');
+                    ctx = canvas.getContext('2d');
+                    
+                    // 첫 페이지 렌더링
+                    renderPage(currentPage);
+                    
+                    hideLoading();
+                }).catch(function(error) {
+                    hideLoading();
+                    alert('❌ PDF 파일을 읽는 중 오류가 발생했습니다: ' + error.message);
+                });
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // PDF 페이지 렌더링
+        function renderPage(num) {
+            pageRendering = true;
+            
+            pdfDoc.getPage(num).then(function(page) {
+                const viewport = page.getViewport({scale: scale});
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                
+                const renderTask = page.render(renderContext);
+                
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+                
+                // 페이지 정보 업데이트
+                document.getElementById('pageInfo').textContent = '페이지 ' + num + ' / ' + pdfDoc.numPages;
+                
+                // 버튼 상태 업데이트
+                document.getElementById('prevPageBtn').disabled = (num <= 1);
+                document.getElementById('nextPageBtn').disabled = (num >= pdfDoc.numPages);
+                
+                // 줌 정보 업데이트
+                document.getElementById('zoomInfo').textContent = Math.round(scale * 100) + '%';
+            });
+        }
+        
+        // 이전 페이지
+        function previousPage() {
+            if (currentPage <= 1) return;
+            currentPage--;
+            renderPage(currentPage);
+        }
+        
+        // 다음 페이지
+        function nextPage() {
+            if (currentPage >= pdfDoc.numPages) return;
+            currentPage++;
+            renderPage(currentPage);
+        }
+        
+        // 줌 인
+        function zoomIn() {
+            if (scale >= 3.0) return;
+            scale += 0.2;
+            renderPage(currentPage);
+        }
+        
+        // 줌 아웃
+        function zoomOut() {
+            if (scale <= 0.5) return;
+            scale -= 0.2;
+            renderPage(currentPage);
+        }
+        
+        // PDF 뷰어 닫기
+        function closePDFViewer() {
+            document.getElementById('pdfViewerModal').classList.remove('show');
+            pdfDoc = null;
+            currentPage = 1;
+            scale = 1.0;
         }
 
         // 프로젝트 파일 처리 (내 기기에서 불러오기)
