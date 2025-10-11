@@ -2373,6 +2373,9 @@
             resultZoomLevel = 1;
             const content = document.getElementById('resultModalContent');
             content.style.transform = 'scale(1)';
+            
+            // 그림판으로 돌아가기 - 도구 선택 해제 (이동/줌 모드)
+            setTool('none');
         }
         
         // 산출 결과 줌 인
