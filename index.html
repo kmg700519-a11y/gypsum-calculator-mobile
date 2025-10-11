@@ -830,13 +830,50 @@
                     </div>
                 </div>
                 
-                <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">각재 종류</label>
+                    <select class="form-select" id="joistType" required onchange="updateJoistOptions()">
+                        <option value="목자재">목자재</option>
+                        <option value="경량철골">경량철골</option>
+                    </select>
+                </div>
+                
+                <!-- 목자재 옵션 -->
+                <div id="woodOptions">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">다루끼 종류</label>
+                            <select class="form-select" id="woodType" required>
+                                <option value="한치각">한치각 (300×300) - 단면용</option>
+                                <option value="한치각반">순고 다루끼/한치각반 (300×450) - 양면용</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">각재 간격 (mm)</label>
+                            <select class="form-select" id="joistSpacing" required>
+                                <option value="300">300mm</option>
+                                <option value="450">450mm</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">길이</label>
+                            <input type="text" class="form-input" value="2700mm" readonly style="background: #f0f0f0;">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 경량철골 옵션 (나중에 추가) -->
+                <div id="steelOptions" style="display: none;">
                     <div class="form-group">
-                        <label class="form-label">각재간격 (mm)</label>
-                        <select class="form-select" id="joistSpacing" required>
-                            <option value="400">400mm</option>
-                            <option value="450">450mm</option>
-                            <option value="600">600mm</option>
+                        <label class="form-label">경량철골 규격</label>
+                        <select class="form-select" id="steelType">
+                            <option value="50형">50형</option>
+                            <option value="75형">75형</option>
+                            <option value="100형">100형</option>
                         </select>
                     </div>
                 </div>
@@ -1086,6 +1123,21 @@
             updateZoomInfo();
         }
 
+        // 각재 종류 선택 시 옵션 변경
+        function updateJoistOptions() {
+            const joistType = document.getElementById('joistType').value;
+            const woodOptions = document.getElementById('woodOptions');
+            const steelOptions = document.getElementById('steelOptions');
+            
+            if (joistType === '목자재') {
+                woodOptions.style.display = 'block';
+                steelOptions.style.display = 'none';
+            } else {
+                woodOptions.style.display = 'none';
+                steelOptions.style.display = 'block';
+            }
+        }
+        
         // 벽체 입력 폼 초기화
         function initWallForm() {
             document.getElementById('wallInputForm').addEventListener('submit', function(e) {
@@ -1100,7 +1152,16 @@
                     selectedWall.height = parseInt(document.getElementById('wallHeight').value);
                     selectedWall.constructionSide = document.getElementById('constructionSide').value;
                     selectedWall.faceDirection = document.getElementById('faceDirection').value;
+                    selectedWall.joistType = document.getElementById('joistType').value;
                     selectedWall.joistSpacing = parseInt(document.getElementById('joistSpacing').value);
+                    
+                    // 목자재 정보
+                    if (selectedWall.joistType === '목자재') {
+                        selectedWall.woodType = document.getElementById('woodType').value;
+                    } else {
+                        selectedWall.steelType = document.getElementById('steelType').value;
+                    }
+                    
                     selectedWall.memo = document.getElementById('wallMemo').value;
                     
                     lastWallHeight = selectedWall.height;
@@ -2043,7 +2104,7 @@
             
             // 종류별로 그룹화
             const groupedByType = {};
-            const groupedBySize = {};
+            const groupedByJoist = {}; // 각재 종류별 그룹화
             
             walls.forEach(wall => {
                 if (wall.width && wall.height) {
@@ -2057,8 +2118,27 @@
                     
                     const finalBoards = Math.ceil(boards);
                     
-                    const joists = Math.ceil((wall.width / wall.joistSpacing) * 
-                        (wall.height / 2400) * (1 + currentLossRate));
+                    let joists = 0;
+                    
+                    // 목자재 각재 계산
+                    if (wall.joistType === '목자재') {
+                        // 1. 세로 각재 (다루끼): 간격으로 나눈 개수 + 1 (양 끝 포함)
+                        const verticalCount = Math.floor(wall.width / wall.joistSpacing) + 1;
+                        const verticalJoists = verticalCount; // 2700mm 기준 1개
+                        
+                        // 2. 최상단 가로 1줄 (벽체 길이만큼)
+                        const topHorizontal = Math.ceil(wall.width / 2700); // 2700mm 기준
+                        
+                        // 3. 최하단 가로 1줄 (벽체 길이만큼)
+                        const bottomHorizontal = Math.ceil(wall.width / 2700); // 2700mm 기준
+                        
+                        // 4. 총 각재 수량 (로스율 포함)
+                        joists = Math.ceil((verticalJoists + topHorizontal + bottomHorizontal) * (1 + currentLossRate));
+                    } 
+                    // 경량철골 계산 (나중에 구현)
+                    else if (wall.joistType === '경량철골') {
+                        joists = 0; // 추후 구현
+                    }
                     
                     // 석고보드 종류별 집계
                     const boardKey = `${wall.boardType}-${wall.boardSize}-${wall.boardThickness}`;
@@ -2080,15 +2160,32 @@
                     });
                     groupedByType[boardKey].totalBoards += finalBoards;
                     
-                    // 각재 간격별 집계
-                    const joistKey = wall.joistSpacing;
-                    if (!groupedBySize[joistKey]) {
-                        groupedBySize[joistKey] = {
-                            spacing: joistKey,
-                            totalJoists: 0
-                        };
+                    // 각재 종류별 집계 (목자재 / 경량철골)
+                    if (wall.joistType === '목자재') {
+                        const joistKey = wall.woodType; // 한치각 또는 한치각반
+                        if (!groupedByJoist[joistKey]) {
+                            groupedByJoist[joistKey] = {
+                                type: '목자재',
+                                name: wall.woodType,
+                                size: wall.woodType === '한치각' ? '300×300' : '300×450',
+                                length: '2700mm',
+                                totalJoists: 0
+                            };
+                        }
+                        groupedByJoist[joistKey].totalJoists += joists;
+                    } else if (wall.joistType === '경량철골') {
+                        const joistKey = `철골-${wall.steelType}`;
+                        if (!groupedByJoist[joistKey]) {
+                            groupedByJoist[joistKey] = {
+                                type: '경량철골',
+                                name: wall.steelType,
+                                size: wall.steelType,
+                                length: '-',
+                                totalJoists: 0
+                            };
+                        }
+                        groupedByJoist[joistKey].totalJoists += joists;
                     }
-                    groupedBySize[joistKey].totalJoists += joists;
                 }
             });
             
@@ -2163,23 +2260,10 @@
                 `;
             });
             
-            // 각재 정보
-            Object.keys(groupedBySize).forEach(key => {
-                const group = groupedBySize[key];
-                totalJoists += group.totalJoists;
-                rowColor = !rowColor;
-                const bgColor = rowColor ? '#f8f9fa' : 'white';
-                
-                resultHTML += `
-                    <tr style="background: ${bgColor}; border-bottom: 1px solid #eee;">
-                        <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: 600; font-size: 0.85rem;">각재</td>
-                        <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: 600; font-size: 0.85rem;">38×89mm</td>
-                        <td style="padding: 10px 8px; text-align: left; border-right: 1px solid #ddd; font-size: 0.9rem;">간격 ${group.spacing}mm</td>
-                        <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-size: 0.9rem;">-</td>
-                        <td style="padding: 10px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; color: #4caf50; font-size: 1rem;">${group.totalJoists}<span style="font-size: 0.8rem;">개</span></td>
-                        <td style="padding: 10px 8px; text-align: center; font-size: 0.85rem;">-</td>
-                    </tr>
-                `;
+            // 각재 정보는 발주 총합에서만 표시
+            totalJoists = 0;
+            Object.keys(groupedByJoist).forEach(key => {
+                totalJoists += groupedByJoist[key].totalJoists;
             });
             
             // 전체 총합 - 종류별로 구분
@@ -2203,15 +2287,21 @@
                 `;
             });
             
-            // 각재 총합
-            resultHTML += `
+            // 각재 종류별 총합
+            Object.keys(groupedByJoist).forEach(key => {
+                const group = groupedByJoist[key];
+                resultHTML += `
                     <tr style="background: #e8f5e9;">
-                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; font-size: 0.9rem;">각재</td>
-                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; font-size: 0.9rem;">38×89mm</td>
-                        <td colspan="2" style="padding: 12px 8px; text-align: right; border-right: 1px solid #ddd; font-weight: bold; font-size: 1rem;">합계</td>
-                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; color: #2e7d32; font-size: 1.2rem;">${totalJoists}개</td>
+                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; font-size: 0.9rem;">${group.type}</td>
+                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; font-size: 0.9rem;">${group.name}<br/>${group.size}</td>
+                        <td colspan="2" style="padding: 12px 8px; text-align: right; border-right: 1px solid #ddd; font-weight: bold; font-size: 1rem;">합계 (${group.length})</td>
+                        <td style="padding: 12px 8px; text-align: center; border-right: 1px solid #ddd; font-weight: bold; color: #2e7d32; font-size: 1.2rem;">${group.totalJoists}개</td>
                         <td style="padding: 12px 8px; text-align: center; font-size: 0.85rem; color: #666;">발주 필요</td>
                     </tr>
+                `;
+            });
+            
+            resultHTML += `
                 </tbody>
             </table>
             `;
@@ -2231,12 +2321,14 @@
         function closeResultModal() {
             document.getElementById('resultModal').classList.remove('show');
             resultZoomLevel = 1;
+            const content = document.getElementById('resultModalContent');
+            content.style.transform = 'scale(1)';
         }
         
         // 산출 결과 줌 인
         function resultZoomIn() {
-            if (resultZoomLevel < 3) {
-                resultZoomLevel += 0.2;
+            if (resultZoomLevel < 2) {
+                resultZoomLevel += 0.1;
                 applyResultZoom();
             }
         }
@@ -2244,7 +2336,7 @@
         // 산출 결과 줌 아웃
         function resultZoomOut() {
             if (resultZoomLevel > 0.5) {
-                resultZoomLevel -= 0.2;
+                resultZoomLevel -= 0.1;
                 applyResultZoom();
             }
         }
@@ -2264,7 +2356,10 @@
         
         // 산출 결과 줌 정보 업데이트
         function updateResultZoomInfo() {
-            document.getElementById('resultZoomInfo').textContent = Math.round(resultZoomLevel * 100) + '%';
+            const zoomInfoEl = document.getElementById('resultZoomInfo');
+            if (zoomInfoEl) {
+                zoomInfoEl.textContent = Math.round(resultZoomLevel * 100) + '%';
+            }
         }
 
         // 로스율 업데이트
