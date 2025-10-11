@@ -1095,7 +1095,7 @@
                 
                 document.getElementById('wallInputModal').classList.remove('show');
                 selectedWall = null;
-                setTool('line');
+                setTool('none');  // 도구 선택 해제
                 document.getElementById('wallInputForm').reset();
             });
         }
@@ -1538,6 +1538,7 @@
                     localStorage.setItem('gypsum_project_list', JSON.stringify(projectList));
                     
                     hideLoading();
+                    setTool('none');  // 저장 후 도구 선택 해제
                     alert('✅ 프로젝트가 저장되었습니다!\n현장명: ' + currentSiteName);
                 } catch (error) {
                     hideLoading();
@@ -1938,7 +1939,7 @@
         function closeWallInput() {
             document.getElementById('wallInputModal').classList.remove('show');
             selectedWall = null;
-            setTool('line');
+            setTool('none');  // 도구 선택 해제
             document.getElementById('drawingTools').style.display = 'flex';
             redrawAll();
         }
