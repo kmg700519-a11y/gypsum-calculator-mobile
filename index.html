@@ -2809,8 +2809,8 @@
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
             if (isMobile) {
-                // 모바일: 카카오톡 공유 URL 사용
-                const kakaoShareUrl = `https://story.kakao.com/share?text=${encodeURIComponent(summaryText)}`;
+                // 모바일: 카카오톡 채팅 공유 URL 사용
+                const kakaoShareUrl = `https://talk.kakao.com/share?text=${encodeURIComponent(summaryText)}`;
                 window.open(kakaoShareUrl, '_blank');
             } else {
                 // PC: Web Share API 또는 클립보드 복사
