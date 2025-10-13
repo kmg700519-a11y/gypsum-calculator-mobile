@@ -3057,16 +3057,13 @@
                     ${infoHTML}
                     <div class="share-buttons">
                         <button class="share-btn kakao-btn" onclick="shareToKakaoText()">
-                            💬 카카오톡으로 이미지 전송
+                            💬 카카오톡으로 전송
                         </button>
                         <button class="share-btn sms-btn" onclick="shareSMS()">
-                            💌 문자 + 이미지 저장
+                            💌 문자로 전송
                         </button>
                         <button class="share-btn email-btn" onclick="shareEmail()">
-                            📧 이메일 + 이미지 저장
-                        </button>
-                        <button class="share-btn download-btn" onclick="downloadImage()">
-                            💾 이미지만 저장
+                            📧 이메일로 전송
                         </button>
                         <button class="share-btn cancel-btn" onclick="closeShareModal()">
                             취소
@@ -3495,17 +3492,13 @@
                     } catch (error) {
                         if (error.name !== 'AbortError') {
                             console.error('공유 실패:', error);
-                            showToast('❌ 공유 실패. 이미지를 저장해주세요.');
+                            downloadImage();
                         }
                     }
                 } else {
-                    // 파일 공유 불가능 시 다운로드
-                    showToast('이 기기에서는 이미지를 직접 저장해주세요');
                     downloadImage();
                 }
             } else {
-                // PC이거나 Web Share API 지원 안함 - 다운로드
-                alert('PC에서는 이미지를 저장한 후\n카카오톡PC버전에서 파일로 전송해주세요!');
                 downloadImage();
             }
         }
@@ -3519,12 +3512,7 @@
         function shareSMS() {
             closeShareModal();
             
-            // 문자 앱을 열고 이미지 저장 안내
-            const message = '석고보드 물량산출 이미지가 저장되었습니다.\n카카오톡에서 이미지 파일을 전송해주세요.';
-            const smsBody = encodeURIComponent(message);
-            window.location.href = `sms:?body=${smsBody}`;
-            
-            // 이미지도 함께 다운로드
+            // 이미지 다운로드
             downloadImage();
         }
         
@@ -3532,13 +3520,7 @@
         function shareEmail() {
             closeShareModal();
             
-            // 이메일 앱을 열고 이미지 첨부 안내
-            const subject = encodeURIComponent(`[${currentSiteName}] 석고보드 물량 산출 결과`);
-            const body = encodeURIComponent('석고보드 물량산출 이미지가 저장되었습니다.\n이메일에 이미지 파일을 첨부해서 전송해주세요.');
-            
-            window.location.href = `mailto:?subject=${subject}&body=${body}`;
-            
-            // 이미지도 함께 다운로드
+            // 이미지 다운로드
             downloadImage();
         }
         
