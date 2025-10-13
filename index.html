@@ -1475,16 +1475,17 @@
 
         // 그림 전체 지우기 (새로 추가된 함수)
         function clearAllDrawings() {
-            if (drawnLines.length === 0) {
+            if (drawnLines.length === 0 && !backgroundImage) {
                 alert('지울 그림이 없습니다.');
                 return;
             }
             
-            if (confirm('🗑️ 모든 그림을 지우시겠습니까?\n(벽체 정보는 유지됩니다)')) {
+            if (confirm('🗑️ 모든 그림과 배경을 지우시겠습니까?\n(벽체 정보는 유지됩니다)')) {
                 drawnLines = [];
                 freeDrawPoints = [];
+                backgroundImage = null;
                 redrawAll();
-                alert('✅ 모든 그림이 지워졌습니다!');
+                alert('✅ 모든 그림과 배경이 지워졌습니다!');
             }
         }
 
