@@ -1156,16 +1156,16 @@
                     lastPinchDistance = 0;  // 초기화
                     handlePinchZoom(e);
                 } else if (e.touches.length === 1) {
-                    e.preventDefault();
                     // 한 손가락: 도구 선택 시 그리기, 아니면 이동
                     if (currentTool === 'none') {
-                        // 이동 모드
+                        // 이동 모드 - preventDefault 하지 않음
                         isPanning = true;
                         isPinching = false;
                         lastPanX = e.touches[0].clientX;
                         lastPanY = e.touches[0].clientY;
                     } else {
                         // 그리기 모드
+                        e.preventDefault();
                         isPinching = false;
                         startDrawing(e);
                     }
@@ -1176,9 +1176,8 @@
                     // 두 손가락: 핀치 줌 (preventDefault는 함수 내부에서)
                     handlePinchZoom(e);
                 } else if (e.touches.length === 1) {
-                    e.preventDefault();
                     if (isPanning && !isPinching) {
-                        // 이동 중
+                        // 이동 중 - preventDefault 하지 않음
                         const touch = e.touches[0];
                         const deltaX = touch.clientX - lastPanX;
                         const deltaY = touch.clientY - lastPanY;
@@ -1190,18 +1189,31 @@
                         lastPanY = touch.clientY;
                         
                         redrawAll();
-                    } else if (!isPinching) {
+                    } else if (!isPinching && currentTool !== 'none') {
                         // 그리기 중
+                        e.preventDefault();
                         draw(e);
                     }
+                    
+                    // 벽체 호버 처리 (터치 이동 시)
+                    handleWallHover(e);
                 }
             });
             canvas.addEventListener('touchend', function(e) {
-                e.preventDefault();
+                // preventDefault는 그리기 중일 때만
+                if (currentTool !== 'none') {
+                    e.preventDefault();
+                }
+                
                 isPanning = false;
                 isPinching = false;
                 lastPinchDistance = 0;
                 stopDrawing(e);
+                
+                // 터치 종료 시 벽체 클릭 처리
+                if (e.changedTouches.length === 1) {
+                    handleWallClick(e);
+                }
             });
             
             updateZoomInfo();
@@ -2995,8 +3007,17 @@
             if (isDrawing || isPanning) return;
             
             const rect = canvas.getBoundingClientRect();
-            const canvasX = e.clientX - rect.left;
-            const canvasY = e.clientY - rect.top;
+            let canvasX, canvasY;
+            
+            // 터치 이벤트와 마우스 이벤트 구분
+            if (e.touches && e.touches.length > 0) {
+                canvasX = e.touches[0].clientX - rect.left;
+                canvasY = e.touches[0].clientY - rect.top;
+            } else {
+                canvasX = e.clientX - rect.left;
+                canvasY = e.clientY - rect.top;
+            }
+            
             const x = (canvasX - panX) / zoomLevel;
             const y = (canvasY - panY) / zoomLevel;
             
@@ -3020,8 +3041,21 @@
             if (currentTool !== 'none' || isPanning) return;
             
             const rect = canvas.getBoundingClientRect();
-            const canvasX = e.clientX - rect.left;
-            const canvasY = e.clientY - rect.top;
+            let canvasX, canvasY, clientX, clientY;
+            
+            // 터치 이벤트와 마우스 이벤트 구분
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                canvasX = e.changedTouches[0].clientX - rect.left;
+                canvasY = e.changedTouches[0].clientY - rect.top;
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                canvasX = e.clientX - rect.left;
+                canvasY = e.clientY - rect.top;
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
             const x = (canvasX - panX) / zoomLevel;
             const y = (canvasY - panY) / zoomLevel;
             
@@ -3031,7 +3065,7 @@
                 e.preventDefault();
                 e.stopPropagation();
                 hoveredWall = wall;
-                showWallMenu(e.clientX, e.clientY);
+                showWallMenu(clientX, clientY);
             } else {
                 hideWallMenu();
             }
