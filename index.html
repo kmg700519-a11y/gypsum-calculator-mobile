@@ -698,9 +698,9 @@
                     <div class="menu-icon">🖼️</div>
                     <div class="menu-text">배경</div>
                 </div>
-                <div class="menu-item" onclick="saveProject()">
-                    <div class="menu-icon">💾</div>
-                    <div class="menu-text">저장</div>
+                <div class="menu-item" onclick="clearAllDrawings()">
+                    <div class="menu-icon">🗑️</div>
+                    <div class="menu-text">그림전체지우기</div>
                 </div>
             </div>
 
@@ -1470,6 +1470,21 @@
                 redrawAll();
             } else {
                 alert('취소할 작업이 없습니다.');
+            }
+        }
+
+        // 그림 전체 지우기 (새로 추가된 함수)
+        function clearAllDrawings() {
+            if (drawnLines.length === 0) {
+                alert('지울 그림이 없습니다.');
+                return;
+            }
+            
+            if (confirm('🗑️ 모든 그림을 지우시겠습니까?\n(벽체 정보는 유지됩니다)')) {
+                drawnLines = [];
+                freeDrawPoints = [];
+                redrawAll();
+                alert('✅ 모든 그림이 지워졌습니다!');
             }
         }
 
