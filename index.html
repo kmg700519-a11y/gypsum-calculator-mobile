@@ -11,10 +11,20 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <!-- 카카오 SDK 추가 -->
+    <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
     <script>
         // PDF.js workerSrc 설정
         if (typeof pdfjsLib !== 'undefined') {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        }
+        
+        // 카카오 SDK 초기화 (앱 키는 나중에 설정)
+        const KAKAO_APP_KEY = 'YOUR_KAKAO_APP_KEY'; // 카카오 개발자센터에서 발급받은 키로 교체 필요
+        
+        if (KAKAO_APP_KEY !== 'YOUR_KAKAO_APP_KEY' && !Kakao.isInitialized()) {
+            Kakao.init(KAKAO_APP_KEY);
+            console.log('카카오 SDK 초기화 완료:', Kakao.isInitialized());
         }
     </script>
     <title>석고보드·각재 물량 산출기</title>
@@ -697,6 +707,100 @@
         }
         
         .close-modal-btn:hover {
+            background: #d0d0d0;
+        }
+        
+        /* 카카오톡 공유 모달 스타일 */
+        .share-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 3000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .share-modal.show {
+            display: flex;
+        }
+        
+        .share-modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .share-modal h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 1.3rem;
+        }
+        
+        .share-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .share-btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .kakao-btn {
+            background: #FEE500;
+            color: #000000;
+        }
+        
+        .kakao-btn:hover {
+            background: #FFEB3B;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(254, 229, 0, 0.4);
+        }
+        
+        .sms-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .sms-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .email-btn {
+            background: linear-gradient(45deg, #f093fb, #f5576c);
+            color: white;
+        }
+        
+        .email-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+        }
+        
+        .cancel-btn {
+            background: #e0e0e0;
+            color: #666;
+        }
+        
+        .cancel-btn:hover {
             background: #d0d0d0;
         }
         
@@ -2829,33 +2933,42 @@
             alert('✅ 엑셀 파일이 저장되었습니다!\n\n파일명: ' + fileName + '.csv\n\n📱 모바일: 다운로드 폴더\n💻 PC: 다운로드 폴더\n\n※ 브라우저 설정에서 저장 위치를 변경할 수 있습니다.');
         }
         
-        // 공유하기
+        // 공유하기 - 새로운 카카오 SDK 방식
         function shareResult() {
-            const options = `
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button class="btn btn-primary" onclick="shareKakao()">💬 카카오톡 전송</button>
-                    <button class="btn btn-primary" onclick="shareSMS()">💌 문자 전송</button>
-                    <button class="btn btn-primary" onclick="shareEmail()">📧 이메일 전송</button>
-                    <button class="btn btn-secondary" onclick="closeShareOptions()">취소</button>
-                </div>
-            `;
-            
             const modal = document.createElement('div');
-            modal.id = 'shareOptionsModal';
-            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3000; display: flex; justify-content: center; align-items: center;';
+            modal.className = 'share-modal show';
+            modal.id = 'shareModal';
             modal.innerHTML = `
-                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%;">
-                    <h3 style="text-align: center; margin-bottom: 20px;">공유 방법 선택</h3>
-                    ${options}
+                <div class="share-modal-content">
+                    <h3>공유 방법 선택</h3>
+                    <div class="share-buttons">
+                        <button class="share-btn kakao-btn" onclick="shareKakao()">
+                            💬 카카오톡 전송
+                        </button>
+                        <button class="share-btn sms-btn" onclick="shareSMS()">
+                            💌 문자 전송
+                        </button>
+                        <button class="share-btn email-btn" onclick="shareEmail()">
+                            📧 이메일 전송
+                        </button>
+                        <button class="share-btn cancel-btn" onclick="closeShareModal()">
+                            취소
+                        </button>
+                    </div>
                 </div>
             `;
             document.body.appendChild(modal);
         }
         
-        // 공유 옵션 닫기
-        function closeShareOptions() {
-            const modal = document.getElementById('shareOptionsModal');
+        // 공유 옵션 닫기 - 새로운 모달 방식
+        function closeShareModal() {
+            const modal = document.getElementById('shareModal');
             if (modal) modal.remove();
+        }
+        
+        // 기존 함수와 호환성을 위한 별칭
+        function closeShareOptions() {
+            closeShareModal();
         }
         
         // 산출 결과 요약 텍스트 생성
@@ -2929,45 +3042,50 @@
             return text;
         }
         
-        // 카카오톡 바로 전송 (산출창에서)
+        // 카카오톡 바로 전송 (산출창에서) - 새로운 SDK 방식
         function shareToKakao() {
             const summaryText = generateSummaryText();
             
-            // 모바일/PC 구분
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            // 카카오 앱 키가 설정되지 않은 경우
+            if (KAKAO_APP_KEY === 'YOUR_KAKAO_APP_KEY') {
+                alert('⚠️ 카카오 앱 키가 설정되지 않았습니다.\n\n클립보드 복사 방식으로 전환합니다.');
+                copyToClipboard(summaryText);
+                return;
+            }
             
-            if (isMobile) {
-                // 모바일: Web Share API 우선 시도, 실패 시 클립보드 복사
-                if (navigator.share) {
-                    navigator.share({
-                        title: `${currentSiteName} 산출 결과`,
-                        text: summaryText
-                    }).then(() => {
-                        alert('✅ 카카오톡으로 전송되었습니다!');
-                    }).catch((error) => {
-                        console.log('공유 취소:', error);
-                        // 실패 시 클립보드 복사
-                        copyToClipboard(summaryText);
-                    });
-                } else {
-                    // Web Share API 지원 안하는 경우 클립보드 복사
+            // 카카오 SDK를 사용한 공유
+            try {
+                Kakao.Share.sendDefault({
+                    objectType: 'text',
+                    text: summaryText,
+                    link: {
+                        mobileWebUrl: window.location.href,
+                        webUrl: window.location.href,
+                    },
+                    buttons: [
+                        {
+                            title: '웹에서 보기',
+                            link: {
+                                mobileWebUrl: window.location.href,
+                                webUrl: window.location.href,
+                            },
+                        },
+                    ],
+                });
+            } catch (error) {
+                console.error('카카오톡 공유 실패:', error);
+                
+                // 실패 시 대체 방법 제공
+                const fallbackChoice = confirm(
+                    '카카오톡 공유에 실패했습니다.\n\n' +
+                    '확인: 클립보드에 복사\n' +
+                    '취소: 텍스트 모달로 보기'
+                );
+                
+                if (fallbackChoice) {
                     copyToClipboard(summaryText);
-                }
-            } else {
-                // PC: Web Share API 또는 클립보드 복사
-                if (navigator.share) {
-                    navigator.share({
-                        title: `${currentSiteName} 산출 결과`,
-                        text: summaryText
-                    }).then(() => {
-                        alert('✅ 카카오톡으로 전송되었습니다!');
-                    }).catch((error) => {
-                        console.log('공유 취소:', error);
-                        // 실패 시 클립보드 복사
-                        copyToClipboard(summaryText);
-                    });
                 } else {
-                    copyToClipboard(summaryText);
+                    showTextModal(summaryText);
                 }
             }
         }
@@ -3056,15 +3174,15 @@
             document.body.removeChild(textarea);
         }
         
-        // 카카오톡 전송 (공유 메뉴에서)
+        // 카카오톡 전송 (공유 메뉴에서) - 새로운 SDK 방식
         function shareKakao() {
-            closeShareOptions();
+            closeShareModal();
             shareToKakao();
         }
         
         // 문자 전송
         function shareSMS() {
-            closeShareOptions();
+            closeShareModal();
             
             const summaryText = generateSummaryText();
             
@@ -3075,7 +3193,7 @@
         
         // 이메일 전송
         function shareEmail() {
-            closeShareOptions();
+            closeShareModal();
             
             const summaryText = generateSummaryText();
             
