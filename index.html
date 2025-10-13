@@ -11,6 +11,8 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         // PDF.js workerSrc 설정
         if (typeof pdfjsLib !== 'undefined') {
@@ -2818,10 +2820,102 @@
             }
         }
         
-        // 카카오톡 전송 (공유 메뉴에서)
-        function shareKakao() {
+        // PDF 생성 및 카카오톡 공유
+        async function shareKakao() {
             closeShareOptions();
-            shareToKakao();
+            
+            try {
+                // 로딩 표시
+                showLoading();
+                
+                // 산출 결과 내용 가져오기
+                const resultContent = document.getElementById('resultModalContent');
+                
+                if (!resultContent) {
+                    alert('산출 결과가 없습니다.');
+                    hideLoading();
+                    return;
+                }
+                
+                // html2canvas로 캡처
+                const canvas = await html2canvas(resultContent, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                });
+                
+                // jsPDF로 PDF 생성
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 297; // A4 height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+                
+                const imgData = canvas.toDataURL('image/png');
+                
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                // PDF를 Blob으로 변환
+                const pdfBlob = pdf.output('blob');
+                const fileName = `${currentSiteName}_산출결과_${new Date().toLocaleDateString('ko-KR').replace(/\./g, '').trim()}.pdf`;
+                
+                hideLoading();
+                
+                // Web Share API로 공유
+                if (navigator.share && navigator.canShare) {
+                    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+                    const shareData = {
+                        title: `${currentSiteName} 산출 결과`,
+                        text: '석고보드·각재 물량 산출 결과입니다.',
+                        files: [file]
+                    };
+                    
+                    if (navigator.canShare(shareData)) {
+                        await navigator.share(shareData);
+                        alert('✅ 공유가 완료되었습니다!');
+                    } else {
+                        // 파일 공유 불가시 다운로드
+                        downloadPDF(pdfBlob, fileName);
+                    }
+                } else {
+                    // Web Share API 미지원시 다운로드
+                    downloadPDF(pdfBlob, fileName);
+                }
+                
+            } catch (error) {
+                hideLoading();
+                console.error('PDF 생성 오류:', error);
+                
+                // 실패 시 기존 텍스트 공유 방식 사용
+                if (error.name !== 'AbortError') {
+                    alert('PDF 생성에 실패했습니다. 텍스트 형식으로 공유합니다.');
+                    shareToKakao();
+                }
+            }
+        }
+        
+        // PDF 다운로드 헬퍼 함수
+        function downloadPDF(blob, fileName) {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+            
+            alert('✅ PDF 파일이 다운로드되었습니다!\n\n다운로드된 파일을 카카오톡에서 공유하세요.');
         }
         
         // 문자 전송
