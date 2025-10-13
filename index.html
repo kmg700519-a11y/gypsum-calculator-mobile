@@ -3565,7 +3565,7 @@
         }
         
         // ============================================
-        // 카카오톡 공유 (Web Share API 사용)
+        // 카카오톡 공유 (커스텀 스킴 사용)
         // ============================================
         async function shareToKakao() {
             closeShareModal();
@@ -3576,26 +3576,24 @@
             // 모바일 여부 확인
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
-            // 1순위: Web Share API (모바일)
-            if (isMobile && navigator.share) {
-                try {
-                    await navigator.share({
-                        text: textSummary
-                    });
-                    showToast('✅ 카카오톡으로 전송되었습니다!');
-                    return;
-                } catch (error) {
-                    if (error.name === 'AbortError') {
-                        // 사용자가 취소한 경우
-                        return;
-                    }
-                    console.error('Web Share 실패:', error);
-                    // 실패 시 클립보드로 진행
-                }
+            if (isMobile) {
+                // 모바일: 카카오톡 커스텀 스킴 사용
+                const encodedText = encodeURIComponent(textSummary);
+                const kakaoScheme = `kakaotalk://send?text=${encodedText}`;
+                
+                // 카카오톡 앱 실행
+                window.location.href = kakaoScheme;
+                
+                // 카카오톡이 설치되지 않은 경우를 대비해 클립보드에도 복사
+                setTimeout(() => {
+                    copyToClipboardSimple(textSummary);
+                }, 500);
+                
+                showToast('✅ 카카오톡 앱이 열립니다!');
+            } else {
+                // PC: 클립보드에 복사
+                copyToClipboardSimple(textSummary);
             }
-            
-            // 2순위: 클립보드에 복사 (PC 또는 Web Share 실패 시)
-            copyToClipboardSimple(textSummary);
         }
         
         // 간단한 클립보드 복사
