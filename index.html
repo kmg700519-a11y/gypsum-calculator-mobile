@@ -3473,20 +3473,7 @@
             try {
                 Kakao.Share.sendDefault({
                     objectType: 'text',
-                    text: summaryText,
-                    link: {
-                        mobileWebUrl: window.location.href,
-                        webUrl: window.location.href,
-                    },
-                    buttons: [
-                        {
-                            title: '웹에서 보기',
-                            link: {
-                                mobileWebUrl: window.location.href,
-                                webUrl: window.location.href,
-                            },
-                        },
-                    ],
+                    text: summaryText
                 });
                 
                 showToast('✅ 카카오톡 창이 열립니다!');
