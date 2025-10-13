@@ -1037,7 +1037,6 @@
         let backgroundImage = null;
         let freeDrawPoints = []; // 자유 그리기 포인트 저장
         let hoveredWall = null; // 마우스 호버된 벽체
-        let hideMenuTimer = null; // 메뉴 숨기기 타이머
         
         // 줌 관련 변수
         let zoomLevel = 1;
@@ -1138,6 +1137,7 @@
             canvas.addEventListener('mousemove', handleWallHover);
             canvas.addEventListener('mouseup', stopDrawing);
             canvas.addEventListener('mouseout', stopDrawing);
+            canvas.addEventListener('click', handleWallClick);
             
             canvas.addEventListener('wheel', handleWheelZoom);
             
@@ -2901,20 +2901,43 @@
             
             if (wall) {
                 hoveredWall = wall;
-                showWallMenu(e.clientX, e.clientY);
                 canvas.style.cursor = 'pointer';
-                // 타이머 취소
-                if (hideMenuTimer) {
-                    clearTimeout(hideMenuTimer);
-                    hideMenuTimer = null;
-                }
             } else {
-                // 지연 후 메뉴 숨기기 (툴팁으로 마우스 이동 시간 확보)
-                scheduleHideMenu();
+                if (hoveredWall && !isWallMenuVisible()) {
+                    hoveredWall = null;
+                }
                 if (currentTool === 'none') {
                     canvas.style.cursor = 'grab';
                 }
             }
+        }
+        
+        // 벽체 클릭 처리
+        function handleWallClick(e) {
+            if (currentTool !== 'none' || isPanning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const canvasX = e.clientX - rect.left;
+            const canvasY = e.clientY - rect.top;
+            const x = (canvasX - panX) / zoomLevel;
+            const y = (canvasY - panY) / zoomLevel;
+            
+            const wall = checkWallNameClick(x, y);
+            
+            if (wall) {
+                e.preventDefault();
+                e.stopPropagation();
+                hoveredWall = wall;
+                showWallMenu(e.clientX, e.clientY);
+            } else {
+                hideWallMenu();
+            }
+        }
+        
+        // 메뉴 표시 여부 확인
+        function isWallMenuVisible() {
+            const tooltip = document.getElementById('wallMenuTooltip');
+            return tooltip.classList.contains('show');
         }
         
         // 벽체 메뉴 표시
@@ -2925,17 +2948,6 @@
             tooltip.classList.add('show');
         }
         
-        // 메뉴 숨기기 예약
-        function scheduleHideMenu() {
-            if (hideMenuTimer) {
-                clearTimeout(hideMenuTimer);
-            }
-            hideMenuTimer = setTimeout(() => {
-                hideWallMenu();
-                hoveredWall = null;
-            }, 300); // 300ms 지연
-        }
-        
         // 벽체 메뉴 숨기기
         function hideWallMenu() {
             const tooltip = document.getElementById('wallMenuTooltip');
@@ -2944,19 +2956,15 @@
         
         // 툴팁 마우스 이벤트 처리 초기화
         function initTooltipEvents() {
-            const tooltip = document.getElementById('wallMenuTooltip');
-            
-            tooltip.addEventListener('mouseenter', () => {
-                // 툴팁에 마우스가 들어오면 숨기기 타이머 취소
-                if (hideMenuTimer) {
-                    clearTimeout(hideMenuTimer);
-                    hideMenuTimer = null;
+            // 문서 전체에 클릭 이벤트 추가 (메뉴 외부 클릭 시 닫기)
+            document.addEventListener('click', function(e) {
+                const tooltip = document.getElementById('wallMenuTooltip');
+                const canvas = document.getElementById('drawingCanvas');
+                
+                // 툴팁이나 캔버스가 아닌 곳을 클릭하면 메뉴 닫기
+                if (!tooltip.contains(e.target) && e.target !== canvas) {
+                    hideWallMenu();
                 }
-            });
-            
-            tooltip.addEventListener('mouseleave', () => {
-                // 툴팁에서 마우스가 나가면 메뉴 숨기기
-                scheduleHideMenu();
             });
         }
         
