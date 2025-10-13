@@ -529,6 +529,49 @@
             opacity: 0.8;
         }
         
+        /* 벽체 메뉴 툴팁 */
+        .wall-menu-tooltip {
+            position: fixed;
+            background: white;
+            border-radius: 10px;
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1500;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .wall-menu-tooltip.show {
+            display: flex;
+        }
+        
+        .wall-menu-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .wall-menu-btn.edit {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .wall-menu-btn.delete {
+            background: #ff6b6b;
+            color: white;
+        }
+        
+        .wall-menu-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+        
         /* 반응형 */
         @media (max-width: 768px) {
             .container {
@@ -975,6 +1018,12 @@
     <input type="file" id="imageFileInput" accept="image/*" style="display: none;" onchange="handleImageFile(this)">
     <input type="file" id="pdfFileInput" accept=".pdf,application/pdf" style="display: none;" onchange="handlePDFFile(this)">
 
+    <!-- 벽체 메뉴 툴팁 -->
+    <div class="wall-menu-tooltip" id="wallMenuTooltip">
+        <button class="wall-menu-btn edit" onclick="editWallFromMenu()">✏️ 수정</button>
+        <button class="wall-menu-btn delete" onclick="deleteWallFromMenu()">🗑️ 삭제</button>
+    </div>
+
     <script>
         // 전역 변수
         let currentTool = 'none';  // 초기에는 도구 선택 안됨
@@ -987,6 +1036,7 @@
         let currentSiteName = '새 현장';
         let backgroundImage = null;
         let freeDrawPoints = []; // 자유 그리기 포인트 저장
+        let hoveredWall = null; // 마우스 호버된 벽체
         
         // 줌 관련 변수
         let zoomLevel = 1;
@@ -1083,8 +1133,10 @@
             
             canvas.addEventListener('mousedown', startDrawing);
             canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mousemove', handleWallHover);
             canvas.addEventListener('mouseup', stopDrawing);
             canvas.addEventListener('mouseout', stopDrawing);
+            canvas.addEventListener('mouseout', hideWallMenu);
             
             canvas.addEventListener('wheel', handleWheelZoom);
             
@@ -2817,7 +2869,120 @@
 
         // 벽체 이름 클릭 처리
         function checkWallNameClick(x, y) {
-            return false;
+            for (let wall of walls) {
+                if (wall.points && wall.name) {
+                    const midX = (wall.points.startX + wall.points.endX) / 2;
+                    const midY = (wall.points.startY + wall.points.endY) / 2;
+                    
+                    // 텍스트 영역 크기 추정 (대략)
+                    const textWidth = wall.name.length * 10 / zoomLevel;
+                    const textHeight = 20 / zoomLevel;
+                    
+                    if (Math.abs(x - midX) < textWidth && Math.abs(y - midY + 15 / zoomLevel) < textHeight) {
+                        return wall;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        // 벽체 호버 처리
+        function handleWallHover(e) {
+            if (isDrawing || isPanning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const canvasX = e.clientX - rect.left;
+            const canvasY = e.clientY - rect.top;
+            const x = (canvasX - panX) / zoomLevel;
+            const y = (canvasY - panY) / zoomLevel;
+            
+            const wall = checkWallNameClick(x, y);
+            
+            if (wall) {
+                hoveredWall = wall;
+                showWallMenu(e.clientX, e.clientY);
+                canvas.style.cursor = 'pointer';
+            } else {
+                hoveredWall = null;
+                hideWallMenu();
+                if (currentTool === 'none') {
+                    canvas.style.cursor = 'grab';
+                }
+            }
+        }
+        
+        // 벽체 메뉴 표시
+        function showWallMenu(x, y) {
+            const tooltip = document.getElementById('wallMenuTooltip');
+            tooltip.style.left = x + 10 + 'px';
+            tooltip.style.top = y + 10 + 'px';
+            tooltip.classList.add('show');
+        }
+        
+        // 벽체 메뉴 숨기기
+        function hideWallMenu() {
+            const tooltip = document.getElementById('wallMenuTooltip');
+            tooltip.classList.remove('show');
+        }
+        
+        // 벽체 수정 (메뉴에서)
+        function editWallFromMenu() {
+            if (hoveredWall) {
+                hideWallMenu();
+                editWall(hoveredWall);
+            }
+        }
+        
+        // 벽체 수정
+        function editWall(wall) {
+            selectedWall = wall;
+            
+            // 입력 폼에 기존 값 채우기
+            document.getElementById('wallName').value = wall.name || '';
+            document.getElementById('boardType').value = wall.boardType || '일반석고보드';
+            document.getElementById('boardSize').value = wall.boardSize || '900x1800';
+            document.getElementById('boardThickness').value = wall.boardThickness || '9.5mm';
+            document.getElementById('wallWidth').value = wall.width || '';
+            document.getElementById('wallHeight').value = wall.height || 2800;
+            document.getElementById('constructionSide').value = wall.constructionSide || '1P';
+            document.getElementById('faceDirection').value = wall.faceDirection || '단면';
+            document.getElementById('joistType').value = wall.joistType || '목자재';
+            
+            updateJoistOptions();
+            
+            if (wall.joistType === '목자재') {
+                document.getElementById('woodType').value = wall.woodType || '한치각';
+                document.getElementById('joistSpacing').value = wall.joistSpacing || 300;
+            } else if (wall.joistType === '경량철골') {
+                document.getElementById('steelThickness').value = wall.steelThickness || 65;
+                document.getElementById('steelLength').value = wall.steelLength || 2700;
+            }
+            
+            document.getElementById('wallMemo').value = wall.memo || '';
+            
+            // 모달 열기
+            document.getElementById('wallInputModal').classList.add('show');
+        }
+        
+        // 벽체 삭제 (메뉴에서)
+        function deleteWallFromMenu() {
+            if (hoveredWall) {
+                hideWallMenu();
+                deleteWall(hoveredWall);
+            }
+        }
+        
+        // 벽체 삭제
+        function deleteWall(wall) {
+            if (confirm(`🗑️ "${wall.name}" 벽체를 삭제하시겠습니까?`)) {
+                const index = walls.indexOf(wall);
+                if (index > -1) {
+                    walls.splice(index, 1);
+                    saveWallsToLocalStorage();
+                    redrawAll();
+                    alert('✅ 벽체가 삭제되었습니다!');
+                }
+            }
         }
 
         // 줌 인
