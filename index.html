@@ -3579,7 +3579,6 @@
                 // 모바일: Web Share API 사용 (채팅 상대 선택 화면 표시)
                 try {
                     await navigator.share({
-                        title: `${currentSiteName} - 석고보드 물량산출`,
                         text: textSummary
                     });
                     showToast('✅ 카카오톡으로 전송되었습니다!');
