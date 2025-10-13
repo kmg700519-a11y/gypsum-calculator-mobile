@@ -3712,24 +3712,53 @@
             downloadImage();
             closeShareModal();
             
+            // 안내 모달 표시
             setTimeout(() => {
-                if (isMobile) {
-                    // 카카오톡 앱 + 채팅창 열기 시도
-                    // 방법 1: 카카오톡 앱 열기
-                    window.location.href = 'kakaotalk://';
-                    
-                    // 방법 2: 잠시 후 채팅방 목록으로 이동 시도
-                    setTimeout(() => {
-                        try {
-                            window.location.href = 'kakaotalk://talk/chats';
-                        } catch (e) {
-                            console.log('채팅방 열기 실패:', e);
-                        }
-                    }, 1000);
+                showKakaoGuideModal();
+            }, 300);
+        }
+        
+        // 카카오톡 전송 안내 모달
+        function showKakaoGuideModal() {
+            const guideModal = document.createElement('div');
+            guideModal.className = 'share-modal show';
+            guideModal.id = 'kakaoGuideModal';
+            guideModal.innerHTML = `
+                <div class="share-modal-content" style="max-width: 400px;">
+                    <h3 style="color: white; background: linear-gradient(45deg, #667eea, #764ba2); margin: -25px -25px 20px -25px; padding: 20px; border-radius: 15px 15px 0 0; text-align: center;">
+                        💬 카카오톡 전송 방법
+                    </h3>
+                    <div style="text-align: left; line-height: 1.8; color: #333;">
+                        <p style="font-weight: 600; color: #4CAF50; margin-bottom: 15px;">
+                            ✅ 이미지가 저장되었습니다!
+                        </p>
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                            <p style="margin: 0 0 10px 0; font-weight: 600;">📱 전송 순서:</p>
+                            <p style="margin: 5px 0;"><strong>1.</strong> 카카오톡 앱 실행</p>
+                            <p style="margin: 5px 0;"><strong>2.</strong> 전송할 채팅방 선택</p>
+                            <p style="margin: 5px 0;"><strong>3.</strong> 📎 (클립) 버튼 클릭</p>
+                            <p style="margin: 5px 0;"><strong>4.</strong> 갤러리/사진 선택</p>
+                            <p style="margin: 5px 0;"><strong>5.</strong> 최근 이미지 선택 후 전송</p>
+                        </div>
+                    </div>
+                    <button onclick="closeKakaoGuideModal()" style="width: 100%; padding: 15px; background: linear-gradient(45deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer;">
+                        확인
+                    </button>
+                </div>
+            `;
+            
+            guideModal.addEventListener('click', function(e) {
+                if (e.target === guideModal) {
+                    closeKakaoGuideModal();
                 }
-                
-                showToast('📥 이미지가 저장되었습니다!\n\n카카오톡 앱이 열렸습니다.\n채팅방에서 이미지를 첨부해주세요.');
-            }, 500);
+            });
+            
+            document.body.appendChild(guideModal);
+        }
+        
+        function closeKakaoGuideModal() {
+            const modal = document.getElementById('kakaoGuideModal');
+            if (modal) modal.remove();
         }
         
         // 기존 함수와 호환성
