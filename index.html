@@ -3141,8 +3141,31 @@
                     if (wall.joistType === '목자재') {
                         const joistKey = wall.woodType;
                         if (!groupedByWood[joistKey]) {
+                            // 목자재 이름과 치수 매핑
+                            let woodName = wall.woodType;
+                            let woodSize = '';
+                            if (wall.woodType === '한치각') {
+                                woodName = '한치각';
+                                woodSize = '30×30';
+                            } else if (wall.woodType === '한치각반') {
+                                woodName = '한치각반 (순고 다루끼)';
+                                woodSize = '30×45';
+                            } else if (wall.woodType.includes('SPF')) {
+                                woodName = wall.woodType;
+                                woodSize = '38×89';
+                            } else if (wall.woodType.includes('×')) {
+                                // 이미 치수가 포함된 경우
+                                const parts = wall.woodType.split(' ');
+                                woodName = parts[0];
+                                woodSize = parts[0];
+                            } else {
+                                woodName = wall.woodType;
+                                woodSize = '';
+                            }
+                            
                             groupedByWood[joistKey] = { 
-                                name: wall.woodType,
+                                name: woodName,
+                                size: woodSize,
                                 length: '2700mm',
                                 count: 0 
                             };
@@ -3209,6 +3232,9 @@
                 Object.keys(groupedByWood).forEach(key => {
                     const wood = groupedByWood[key];
                     text += `▪ ${wood.name}\n`;
+                    if (wood.size) {
+                        text += `  규격: ${wood.size}\n`;
+                    }
                     text += `  길이: ${wood.length}\n`;
                     text += `  수량: ${wood.count}개\n\n`;
                 });
@@ -3324,8 +3350,31 @@
                     if (wall.joistType === '목자재') {
                         const joistKey = wall.woodType;
                         if (!groupedByWood[joistKey]) {
+                            // 목자재 이름과 치수 매핑
+                            let woodName = wall.woodType;
+                            let woodSize = '';
+                            if (wall.woodType === '한치각') {
+                                woodName = '한치각';
+                                woodSize = '30×30';
+                            } else if (wall.woodType === '한치각반') {
+                                woodName = '한치각반 (순고 다루끼)';
+                                woodSize = '30×45';
+                            } else if (wall.woodType.includes('SPF')) {
+                                woodName = wall.woodType;
+                                woodSize = '38×89';
+                            } else if (wall.woodType.includes('×')) {
+                                // 이미 치수가 포함된 경우
+                                const parts = wall.woodType.split(' ');
+                                woodName = parts[0];
+                                woodSize = parts[0];
+                            } else {
+                                woodName = wall.woodType;
+                                woodSize = '';
+                            }
+                            
                             groupedByWood[joistKey] = { 
-                                name: wall.woodType, 
+                                name: woodName,
+                                size: woodSize,
                                 length: '2700mm',
                                 count: 0 
                             };
@@ -3440,7 +3489,8 @@
                 ctx.fillStyle = '#333333';
                 ctx.font = 'bold 16px Malgun Gothic';
                 ctx.fillText('품명', 50, y + 25);
-                ctx.fillText('길이', 400, y + 25);
+                ctx.fillText('규격', 280, y + 25);
+                ctx.fillText('길이', 450, y + 25);
                 ctx.fillText('수량', 620, y + 25);
                 
                 y += 40;
@@ -3464,7 +3514,10 @@
                     // 텍스트
                     ctx.fillStyle = '#333333';
                     ctx.fillText(wood.name, 50, y + 25);
-                    ctx.fillText(wood.length, 400, y + 25);
+                    if (wood.size) {
+                        ctx.fillText(wood.size, 280, y + 25);
+                    }
+                    ctx.fillText(wood.length, 450, y + 25);
                     ctx.fillText(`${wood.count}개`, 620, y + 25);
                     
                     y += 40;
