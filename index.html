@@ -11,20 +11,10 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
     <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-    <!-- 카카오 SDK 추가 -->
-    <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
     <script>
         // PDF.js workerSrc 설정
         if (typeof pdfjsLib !== 'undefined') {
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-        }
-        
-        // 카카오 SDK 초기화 (앱 키는 나중에 설정)
-        const KAKAO_APP_KEY = 'YOUR_KAKAO_APP_KEY'; // 카카오 개발자센터에서 발급받은 키로 교체 필요
-        
-        if (KAKAO_APP_KEY !== 'YOUR_KAKAO_APP_KEY' && !Kakao.isInitialized()) {
-            Kakao.init(KAKAO_APP_KEY);
-            console.log('카카오 SDK 초기화 완료:', Kakao.isInitialized());
         }
     </script>
     <title>석고보드·각재 물량 산출기</title>
@@ -804,6 +794,68 @@
             background: #d0d0d0;
         }
         
+        /* 이미지 미리보기 */
+        .image-preview {
+            width: 100%;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            max-height: 400px;
+        }
+        
+        .image-preview img {
+            width: 100%;
+            display: block;
+        }
+        
+        /* 로딩 애니메이션 */
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .share-modal-content {
+            animation: slideUp 0.3s ease;
+        }
+        
+        /* 토스트 메시지 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4CAF50;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 4000;
+            display: none;
+            animation: fadeInOut 3s ease;
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            10%, 90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        .toast.show {
+            display: block;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
         /* 반응형 */
         @media (max-width: 768px) {
             .container {
@@ -1255,6 +1307,9 @@
         <button class="wall-menu-btn edit" onclick="editWallFromMenu()">✏️ 수정</button>
         <button class="wall-menu-btn delete" onclick="deleteWallFromMenu()">🗑️ 삭제</button>
     </div>
+
+    <!-- Canvas 요소 (숨김) - 이미지 생성용 -->
+    <canvas id="resultCanvas" style="display: none;"></canvas>
 
     <script>
         // 전역 변수
@@ -2933,17 +2988,41 @@
             alert('✅ 엑셀 파일이 저장되었습니다!\n\n파일명: ' + fileName + '.csv\n\n📱 모바일: 다운로드 폴더\n💻 PC: 다운로드 폴더\n\n※ 브라우저 설정에서 저장 위치를 변경할 수 있습니다.');
         }
         
-        // 공유하기 - 새로운 카카오 SDK 방식
-        function shareResult() {
+        // 공유하기 - 이미지 생성 방식
+        async function shareResult() {
+            // 로딩 모달 표시
+            const loadingModal = document.createElement('div');
+            loadingModal.className = 'share-modal show';
+            loadingModal.id = 'loadingModal';
+            loadingModal.innerHTML = `
+                <div class="share-modal-content">
+                    <div class="loading">
+                        <p style="font-size: 18px; margin: 0;">이미지 생성 중...</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loadingModal);
+            
+            // 이미지 생성
+            const imageBlob = await generateImage();
+            const imageUrl = URL.createObjectURL(imageBlob);
+            
+            // 로딩 모달 제거
+            loadingModal.remove();
+            
+            // 공유 모달 생성
             const modal = document.createElement('div');
             modal.className = 'share-modal show';
             modal.id = 'shareModal';
             modal.innerHTML = `
                 <div class="share-modal-content">
-                    <h3>공유 방법 선택</h3>
+                    <h3>📤 공유 방법 선택</h3>
+                    <div class="image-preview">
+                        <img src="${imageUrl}" alt="산출 결과">
+                    </div>
                     <div class="share-buttons">
-                        <button class="share-btn kakao-btn" onclick="shareKakao()">
-                            💬 카카오톡 전송
+                        <button class="share-btn kakao-btn" onclick="shareToKakao()">
+                            💬 카카오톡으로 공유
                         </button>
                         <button class="share-btn sms-btn" onclick="shareSMS()">
                             💌 문자 전송
@@ -2951,19 +3030,38 @@
                         <button class="share-btn email-btn" onclick="shareEmail()">
                             📧 이메일 전송
                         </button>
+                        <button class="share-btn download-btn" onclick="downloadImage()">
+                            💾 이미지 저장
+                        </button>
                         <button class="share-btn cancel-btn" onclick="closeShareModal()">
                             취소
                         </button>
                     </div>
                 </div>
             `;
+            
+            // 모달 외부 클릭 시 닫기
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeShareModal();
+                }
+            });
+            
             document.body.appendChild(modal);
+            
+            // 전역 변수에 저장
+            window.currentImageBlob = imageBlob;
+            window.currentImageUrl = imageUrl;
         }
         
         // 공유 옵션 닫기 - 새로운 모달 방식
         function closeShareModal() {
             const modal = document.getElementById('shareModal');
             if (modal) modal.remove();
+            // URL 정리
+            if (window.currentImageUrl) {
+                URL.revokeObjectURL(window.currentImageUrl);
+            }
         }
         
         // 기존 함수와 호환성을 위한 별칭
@@ -3042,52 +3140,212 @@
             return text;
         }
         
-        // 카카오톡 바로 전송 (산출창에서) - 새로운 SDK 방식
-        function shareToKakao() {
-            const summaryText = generateSummaryText();
+        // ============================================
+        // Canvas로 이미지 생성
+        // ============================================
+        function generateImage() {
+            const canvas = document.getElementById('resultCanvas');
+            const ctx = canvas.getContext('2d');
             
-            // 카카오 앱 키가 설정되지 않은 경우
-            if (KAKAO_APP_KEY === 'YOUR_KAKAO_APP_KEY') {
-                alert('⚠️ 카카오 앱 키가 설정되지 않았습니다.\n\n클립보드 복사 방식으로 전환합니다.');
-                copyToClipboard(summaryText);
-                return;
-            }
+            // Canvas 크기 설정 (고해상도)
+            const width = 800;
+            let height = 600; // 기본 높이, 내용에 따라 조정
+            canvas.width = width;
+            canvas.height = height;
             
-            // 카카오 SDK를 사용한 공유
-            try {
-                Kakao.Share.sendDefault({
-                    objectType: 'text',
-                    text: summaryText,
-                    link: {
-                        mobileWebUrl: window.location.href,
-                        webUrl: window.location.href,
-                    },
-                    buttons: [
-                        {
-                            title: '웹에서 보기',
-                            link: {
-                                mobileWebUrl: window.location.href,
-                                webUrl: window.location.href,
-                            },
-                        },
-                    ],
-                });
-            } catch (error) {
-                console.error('카카오톡 공유 실패:', error);
-                
-                // 실패 시 대체 방법 제공
-                const fallbackChoice = confirm(
-                    '카카오톡 공유에 실패했습니다.\n\n' +
-                    '확인: 클립보드에 복사\n' +
-                    '취소: 텍스트 모달로 보기'
-                );
-                
-                if (fallbackChoice) {
-                    copyToClipboard(summaryText);
-                } else {
-                    showTextModal(summaryText);
+            // 배경색
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            
+            let y = 40; // 시작 Y 위치
+            
+            // 헤더 배경
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, 120);
+            
+            // 제목
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 32px Malgun Gothic';
+            ctx.textAlign = 'center';
+            ctx.fillText('📊 석고보드 물량 산출', width / 2, y + 25);
+            
+            // 현장명
+            ctx.font = 'bold 24px Malgun Gothic';
+            ctx.fillText(currentSiteName || '석고보드 산출', width / 2, y + 60);
+            
+            y = 140;
+            
+            // 정보 박스 배경
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(30, y, width - 60, 50);
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(30, y, width - 60, 50);
+            
+            // 작성일과 로스율
+            ctx.fillStyle = '#333333';
+            ctx.font = '16px Malgun Gothic';
+            ctx.textAlign = 'left';
+            const dateStr = new Date().toLocaleString('ko-KR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            ctx.fillText(`작성일: ${dateStr}`, 50, y + 30);
+            ctx.fillText(`로스율: ${Math.round(currentLossRate * 100)}%`, 550, y + 30);
+            
+            y += 80;
+            
+            // 석고보드 종류별 집계
+            const groupedByType = {};
+            const groupedByJoist = {};
+            
+            walls.forEach(wall => {
+                if (wall.width && wall.height) {
+                    const area = (wall.width * wall.height) / 1000000;
+                    const boardArea = getBoardArea(wall.boardSize);
+                    let boards = (area / boardArea);
+                    boards *= (wall.constructionSide === '2P' ? 2 : 1);
+                    boards *= (wall.faceDirection === '양면' ? 2 : 1);
+                    boards *= (1 + currentLossRate);
+                    const finalBoards = Math.ceil(boards);
+                    
+                    const boardKey = `${wall.boardType}-${wall.boardSize}-${wall.boardThickness}`;
+                    if (!groupedByType[boardKey]) {
+                        groupedByType[boardKey] = {
+                            type: wall.boardType,
+                            size: wall.boardSize,
+                            thickness: wall.boardThickness,
+                            totalBoards: 0
+                        };
+                    }
+                    groupedByType[boardKey].totalBoards += finalBoards;
+                    
+                    // 각재 집계
+                    if (wall.joistType === '목자재') {
+                        const joistKey = wall.woodType;
+                        if (!groupedByJoist[joistKey]) {
+                            groupedByJoist[joistKey] = { name: wall.woodType, count: 0 };
+                        }
+                        const verticalCount = Math.floor(wall.width / wall.joistSpacing) + 1;
+                        const horizontal = Math.ceil(wall.width / 2700) * 2;
+                        let total = verticalCount + horizontal;
+                        total *= (wall.faceDirection === '양면' ? 2 : 1);
+                        groupedByJoist[joistKey].count += Math.ceil(total * (1 + currentLossRate));
+                    }
                 }
-            }
+            });
+            
+            // 석고보드 섹션
+            ctx.fillStyle = '#667eea';
+            ctx.font = 'bold 22px Malgun Gothic';
+            ctx.fillText('■ 석고보드', 50, y);
+            y += 35;
+            
+            // 석고보드 테이블 헤더
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(30, y, width - 60, 40);
+            ctx.strokeStyle = '#cccccc';
+            ctx.strokeRect(30, y, width - 60, 40);
+            
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 16px Malgun Gothic';
+            ctx.fillText('종류', 50, y + 25);
+            ctx.fillText('규격', 250, y + 25);
+            ctx.fillText('두께', 450, y + 25);
+            ctx.fillText('수량', 620, y + 25);
+            
+            y += 40;
+            
+            // 석고보드 데이터
+            ctx.font = '16px Malgun Gothic';
+            let boardIndex = 0;
+            Object.keys(groupedByType).forEach(key => {
+                const board = groupedByType[key];
+                
+                // 배경 (교차 색상)
+                if (boardIndex % 2 === 0) {
+                    ctx.fillStyle = '#ffffff';
+                } else {
+                    ctx.fillStyle = '#f9f9f9';
+                }
+                ctx.fillRect(30, y, width - 60, 40);
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.strokeRect(30, y, width - 60, 40);
+                
+                // 텍스트
+                ctx.fillStyle = '#333333';
+                ctx.fillText(board.type, 50, y + 25);
+                ctx.fillText(board.size, 250, y + 25);
+                ctx.fillText(board.thickness, 450, y + 25);
+                ctx.fillText(`${board.totalBoards}장`, 620, y + 25);
+                
+                y += 40;
+                boardIndex++;
+            });
+            
+            y += 20;
+            
+            // 목자재/각재 섹션
+            ctx.fillStyle = '#764ba2';
+            ctx.font = 'bold 22px Malgun Gothic';
+            ctx.fillText('■ 목자재/각재', 50, y);
+            y += 35;
+            
+            // 각재 테이블 헤더
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(30, y, width - 60, 40);
+            ctx.strokeStyle = '#cccccc';
+            ctx.strokeRect(30, y, width - 60, 40);
+            
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 16px Malgun Gothic';
+            ctx.fillText('품명', 50, y + 25);
+            ctx.fillText('길이', 400, y + 25);
+            ctx.fillText('수량', 620, y + 25);
+            
+            y += 40;
+            
+            // 각재 데이터
+            ctx.font = '16px Malgun Gothic';
+            let joistIndex = 0;
+            Object.keys(groupedByJoist).forEach(key => {
+                const joist = groupedByJoist[key];
+                
+                // 배경 (교차 색상)
+                if (joistIndex % 2 === 0) {
+                    ctx.fillStyle = '#ffffff';
+                } else {
+                    ctx.fillStyle = '#f9f9f9';
+                }
+                ctx.fillRect(30, y, width - 60, 40);
+                ctx.strokeStyle = '#e0e0e0';
+                ctx.strokeRect(30, y, width - 60, 40);
+                
+                // 텍스트
+                ctx.fillStyle = '#333333';
+                ctx.fillText(joist.name, 50, y + 25);
+                ctx.fillText('2700mm', 400, y + 25);
+                ctx.fillText(`${joist.count}개`, 620, y + 25);
+                
+                y += 40;
+                joistIndex++;
+            });
+            
+            // Canvas 높이 조정
+            canvas.height = y + 40;
+            
+            // Canvas를 Blob으로 변환
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => {
+                    resolve(blob);
+                }, 'image/png');
+            });
         }
         
         // 클립보드 복사 헬퍼 함수
@@ -3174,9 +3432,53 @@
             document.body.removeChild(textarea);
         }
         
-        // 카카오톡 전송 (공유 메뉴에서) - 새로운 SDK 방식
+        // 카카오톡 전송 (공유 메뉴에서) - Web Share API 방식
+        async function shareToKakao() {
+            const imageBlob = window.currentImageBlob;
+            
+            if (!imageBlob) {
+                showToast('이미지 생성 실패');
+                return;
+            }
+            
+            // 모바일 여부 확인
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile && navigator.share && navigator.canShare) {
+                // 이미지 파일로 변환
+                const file = new File([imageBlob], '석고보드_물량산출.png', { type: 'image/png' });
+                
+                // 공유 가능 여부 확인
+                if (navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            title: `${currentSiteName} - 석고보드 물량산출`,
+                            text: '석고보드 물량 산출 결과입니다.',
+                            files: [file]
+                        });
+                        showToast('✅ 공유 완료!');
+                        closeShareModal();
+                    } catch (error) {
+                        if (error.name !== 'AbortError') {
+                            console.error('공유 실패:', error);
+                            // 공유 실패 시 다운로드로 대체
+                            downloadImage();
+                        }
+                    }
+                } else {
+                    // 파일 공유 불가능 시 다운로드
+                    showToast('이 기기에서는 이미지를 직접 저장해주세요');
+                    downloadImage();
+                }
+            } else {
+                // PC이거나 Web Share API 지원 안함 - 다운로드
+                alert('PC에서는 이미지를 저장한 후\n카카오톡PC버전에서 파일로 전송해주세요!');
+                downloadImage();
+            }
+        }
+        
+        // 기존 함수와 호환성
         function shareKakao() {
-            closeShareModal();
             shareToKakao();
         }
         
@@ -3201,6 +3503,48 @@
             const body = encodeURIComponent(summaryText);
             
             window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        }
+        
+        // ============================================
+        // 이미지 다운로드
+        // ============================================
+        function downloadImage() {
+            const imageUrl = window.currentImageUrl;
+            
+            if (!imageUrl) {
+                showToast('이미지 생성 실패');
+                return;
+            }
+            
+            // 다운로드 링크 생성
+            const link = document.createElement('a');
+            const fileName = `석고보드_물량산출_${currentSiteName}_${new Date().getTime()}.png`;
+            link.href = imageUrl;
+            link.download = fileName;
+            link.click();
+            
+            showToast('💾 이미지가 저장되었습니다!');
+            closeShareModal();
+        }
+        
+        // ============================================
+        // 토스트 메시지
+        // ============================================
+        function showToast(message) {
+            let toast = document.getElementById('toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.id = 'toast';
+                document.body.appendChild(toast);
+            }
+            
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
         }
 
         // 로스율 업데이트
