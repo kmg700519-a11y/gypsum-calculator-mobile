@@ -3105,13 +3105,15 @@
         function generateSummaryText() {
             let text = `━━━━━━━━━━━━━━━━━━\n`;
             text += `📊 ${currentSiteName}\n`;
+            text += `   석고보드 각재 산출내역\n`;
             text += `━━━━━━━━━━━━━━━━━━\n`;
             text += `작성일: ${new Date().toLocaleString('ko-KR')}\n`;
             text += `로스율: ${Math.round(currentLossRate * 100)}%\n\n`;
             
             // 석고보드 종류별 집계
             const groupedByType = {};
-            const groupedByJoist = {};
+            const groupedByWood = {};
+            const groupedBySteel = {};
             
             walls.forEach(wall => {
                 if (wall.width && wall.height) {
@@ -3123,6 +3125,7 @@
                     boards *= (1 + currentLossRate);
                     const finalBoards = Math.ceil(boards);
                     
+                    // 석고보드 집계
                     const boardKey = `${wall.boardType}-${wall.boardSize}-${wall.boardThickness}`;
                     if (!groupedByType[boardKey]) {
                         groupedByType[boardKey] = {
@@ -3134,37 +3137,97 @@
                     }
                     groupedByType[boardKey].totalBoards += finalBoards;
                     
-                    // 각재 집계 (간단 버전)
+                    // 목자재 집계
                     if (wall.joistType === '목자재') {
                         const joistKey = wall.woodType;
-                        if (!groupedByJoist[joistKey]) {
-                            groupedByJoist[joistKey] = { name: wall.woodType, count: 0 };
+                        if (!groupedByWood[joistKey]) {
+                            groupedByWood[joistKey] = { 
+                                name: wall.woodType,
+                                length: '2700mm',
+                                count: 0 
+                            };
                         }
-                        // 간단 계산
                         const verticalCount = Math.floor(wall.width / wall.joistSpacing) + 1;
                         const horizontal = Math.ceil(wall.width / 2700) * 2;
                         let total = verticalCount + horizontal;
                         total *= (wall.faceDirection === '양면' ? 2 : 1);
-                        groupedByJoist[joistKey].count += Math.ceil(total * (1 + currentLossRate));
+                        groupedByWood[joistKey].count += Math.ceil(total * (1 + currentLossRate));
+                    }
+                    
+                    // 경량철골 집계
+                    if (wall.joistType === '경량철골') {
+                        const spacing = 450;
+                        
+                        // 러너 계산
+                        const runnerKey = `러너-${wall.steelThickness}-${wall.steelLength}`;
+                        if (!groupedBySteel[runnerKey]) {
+                            groupedBySteel[runnerKey] = {
+                                type: '러너',
+                                thickness: wall.steelThickness,
+                                length: wall.steelLength,
+                                count: 0
+                            };
+                        }
+                        let runnerPieces = Math.ceil(wall.width / wall.steelLength) * 2;
+                        runnerPieces *= (wall.faceDirection === '양면' ? 2 : 1);
+                        groupedBySteel[runnerKey].count += Math.ceil(runnerPieces * (1 + currentLossRate));
+                        
+                        // 스터드 계산
+                        const studKey = `스터드-${wall.steelThickness}-${wall.steelLength}`;
+                        if (!groupedBySteel[studKey]) {
+                            groupedBySteel[studKey] = {
+                                type: '스터드',
+                                thickness: wall.steelThickness,
+                                length: wall.steelLength,
+                                count: 0
+                            };
+                        }
+                        const studCount = Math.floor(wall.width / spacing) + 1;
+                        const piecesPerStud = Math.ceil(wall.height / wall.steelLength);
+                        let totalStud = studCount * piecesPerStud;
+                        totalStud *= (wall.faceDirection === '양면' ? 2 : 1);
+                        groupedBySteel[studKey].count += Math.ceil(totalStud * (1 + currentLossRate));
                     }
                 }
             });
             
-            text += `【석고보드】\n`;
+            // 석고보드 출력
+            text += `【 석고보드 】\n`;
+            text += `─────────────────\n`;
             Object.keys(groupedByType).forEach(key => {
-                const group = groupedByType[key];
-                text += `▪ ${group.type} ${group.size} ${group.thickness}\n`;
-                text += `  → ${group.totalBoards}장\n`;
+                const board = groupedByType[key];
+                text += `▪ ${board.type}석고보드\n`;
+                text += `  규격: ${board.size}\n`;
+                text += `  두께: ${board.thickness}\n`;
+                text += `  수량: ${board.totalBoards}장\n\n`;
             });
             
-            text += `\n【목자재/각재】\n`;
-            Object.keys(groupedByJoist).forEach(key => {
-                const group = groupedByJoist[key];
-                text += `▪ ${group.name} (2700mm)\n`;
-                text += `  → ${group.count}개\n`;
-            });
+            // 목자재 출력
+            if (Object.keys(groupedByWood).length > 0) {
+                text += `【 목자재/각재 】\n`;
+                text += `─────────────────\n`;
+                Object.keys(groupedByWood).forEach(key => {
+                    const wood = groupedByWood[key];
+                    text += `▪ ${wood.name}\n`;
+                    text += `  길이: ${wood.length}\n`;
+                    text += `  수량: ${wood.count}개\n\n`;
+                });
+            }
             
-            text += `\n━━━━━━━━━━━━━━━━━━`;
+            // 경량철골 출력
+            if (Object.keys(groupedBySteel).length > 0) {
+                text += `【 경량철골 】\n`;
+                text += `─────────────────\n`;
+                Object.keys(groupedBySteel).forEach(key => {
+                    const steel = groupedBySteel[key];
+                    text += `▪ ${steel.type}\n`;
+                    text += `  두께: ${steel.thickness}mm\n`;
+                    text += `  길이: ${steel.length}mm\n`;
+                    text += `  수량: ${steel.count}개\n\n`;
+                });
+            }
+            
+            text += `━━━━━━━━━━━━━━━━━━`;
             
             return text;
         }
@@ -3230,9 +3293,10 @@
             
             y += 80;
             
-            // 석고보드 종류별 집계
+            // 석고보드, 목자재, 경량철골 집계
             const groupedByType = {};
-            const groupedByJoist = {};
+            const groupedByWood = {};
+            const groupedBySteel = {};
             
             walls.forEach(wall => {
                 if (wall.width && wall.height) {
@@ -3244,6 +3308,7 @@
                     boards *= (1 + currentLossRate);
                     const finalBoards = Math.ceil(boards);
                     
+                    // 석고보드 집계
                     const boardKey = `${wall.boardType}-${wall.boardSize}-${wall.boardThickness}`;
                     if (!groupedByType[boardKey]) {
                         groupedByType[boardKey] = {
@@ -3255,17 +3320,56 @@
                     }
                     groupedByType[boardKey].totalBoards += finalBoards;
                     
-                    // 각재 집계
+                    // 목자재 집계
                     if (wall.joistType === '목자재') {
                         const joistKey = wall.woodType;
-                        if (!groupedByJoist[joistKey]) {
-                            groupedByJoist[joistKey] = { name: wall.woodType, count: 0 };
+                        if (!groupedByWood[joistKey]) {
+                            groupedByWood[joistKey] = { 
+                                name: wall.woodType, 
+                                length: '2700mm',
+                                count: 0 
+                            };
                         }
                         const verticalCount = Math.floor(wall.width / wall.joistSpacing) + 1;
                         const horizontal = Math.ceil(wall.width / 2700) * 2;
                         let total = verticalCount + horizontal;
                         total *= (wall.faceDirection === '양면' ? 2 : 1);
-                        groupedByJoist[joistKey].count += Math.ceil(total * (1 + currentLossRate));
+                        groupedByWood[joistKey].count += Math.ceil(total * (1 + currentLossRate));
+                    }
+                    
+                    // 경량철골 집계
+                    if (wall.joistType === '경량철골') {
+                        const spacing = 450;
+                        
+                        // 러너 계산
+                        const runnerKey = `러너-${wall.steelThickness}-${wall.steelLength}`;
+                        if (!groupedBySteel[runnerKey]) {
+                            groupedBySteel[runnerKey] = {
+                                type: '러너',
+                                thickness: wall.steelThickness,
+                                length: wall.steelLength,
+                                count: 0
+                            };
+                        }
+                        let runnerPieces = Math.ceil(wall.width / wall.steelLength) * 2;
+                        runnerPieces *= (wall.faceDirection === '양면' ? 2 : 1);
+                        groupedBySteel[runnerKey].count += Math.ceil(runnerPieces * (1 + currentLossRate));
+                        
+                        // 스터드 계산
+                        const studKey = `스터드-${wall.steelThickness}-${wall.steelLength}`;
+                        if (!groupedBySteel[studKey]) {
+                            groupedBySteel[studKey] = {
+                                type: '스터드',
+                                thickness: wall.steelThickness,
+                                length: wall.steelLength,
+                                count: 0
+                            };
+                        }
+                        const studCount = Math.floor(wall.width / spacing) + 1;
+                        const piecesPerStud = Math.ceil(wall.height / wall.steelLength);
+                        let totalStud = studCount * piecesPerStud;
+                        totalStud *= (wall.faceDirection === '양면' ? 2 : 1);
+                        groupedBySteel[studKey].count += Math.ceil(totalStud * (1 + currentLossRate));
                     }
                 }
             });
@@ -3321,50 +3425,106 @@
             y += 20;
             
             // 목자재/각재 섹션
-            ctx.fillStyle = '#764ba2';
-            ctx.font = 'bold 22px Malgun Gothic';
-            ctx.fillText('■ 목자재/각재', 50, y);
-            y += 35;
-            
-            // 각재 테이블 헤더
-            ctx.fillStyle = '#f0f0f0';
-            ctx.fillRect(30, y, width - 60, 40);
-            ctx.strokeStyle = '#cccccc';
-            ctx.strokeRect(30, y, width - 60, 40);
-            
-            ctx.fillStyle = '#333333';
-            ctx.font = 'bold 16px Malgun Gothic';
-            ctx.fillText('품명', 50, y + 25);
-            ctx.fillText('길이', 400, y + 25);
-            ctx.fillText('수량', 620, y + 25);
-            
-            y += 40;
-            
-            // 각재 데이터
-            ctx.font = '16px Malgun Gothic';
-            let joistIndex = 0;
-            Object.keys(groupedByJoist).forEach(key => {
-                const joist = groupedByJoist[key];
+            if (Object.keys(groupedByWood).length > 0) {
+                ctx.fillStyle = '#764ba2';
+                ctx.font = 'bold 22px Malgun Gothic';
+                ctx.fillText('■ 목자재/각재', 50, y);
+                y += 35;
                 
-                // 배경 (교차 색상)
-                if (joistIndex % 2 === 0) {
-                    ctx.fillStyle = '#ffffff';
-                } else {
-                    ctx.fillStyle = '#f9f9f9';
-                }
+                // 각재 테이블 헤더
+                ctx.fillStyle = '#f0f0f0';
                 ctx.fillRect(30, y, width - 60, 40);
-                ctx.strokeStyle = '#e0e0e0';
+                ctx.strokeStyle = '#cccccc';
                 ctx.strokeRect(30, y, width - 60, 40);
                 
-                // 텍스트
                 ctx.fillStyle = '#333333';
-                ctx.fillText(joist.name, 50, y + 25);
-                ctx.fillText('2700mm', 400, y + 25);
-                ctx.fillText(`${joist.count}개`, 620, y + 25);
+                ctx.font = 'bold 16px Malgun Gothic';
+                ctx.fillText('품명', 50, y + 25);
+                ctx.fillText('길이', 400, y + 25);
+                ctx.fillText('수량', 620, y + 25);
                 
                 y += 40;
-                joistIndex++;
-            });
+                
+                // 각재 데이터
+                ctx.font = '16px Malgun Gothic';
+                let woodIndex = 0;
+                Object.keys(groupedByWood).forEach(key => {
+                    const wood = groupedByWood[key];
+                    
+                    // 배경 (교차 색상)
+                    if (woodIndex % 2 === 0) {
+                        ctx.fillStyle = '#ffffff';
+                    } else {
+                        ctx.fillStyle = '#f9f9f9';
+                    }
+                    ctx.fillRect(30, y, width - 60, 40);
+                    ctx.strokeStyle = '#e0e0e0';
+                    ctx.strokeRect(30, y, width - 60, 40);
+                    
+                    // 텍스트
+                    ctx.fillStyle = '#333333';
+                    ctx.fillText(wood.name, 50, y + 25);
+                    ctx.fillText(wood.length, 400, y + 25);
+                    ctx.fillText(`${wood.count}개`, 620, y + 25);
+                    
+                    y += 40;
+                    woodIndex++;
+                });
+                
+                y += 20;
+            }
+            
+            // 경량철골 섹션
+            if (Object.keys(groupedBySteel).length > 0) {
+                ctx.fillStyle = '#e74c3c';
+                ctx.font = 'bold 22px Malgun Gothic';
+                ctx.fillText('■ 경량철골', 50, y);
+                y += 35;
+                
+                // 경량철골 테이블 헤더
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(30, y, width - 60, 40);
+                ctx.strokeStyle = '#cccccc';
+                ctx.strokeRect(30, y, width - 60, 40);
+                
+                ctx.fillStyle = '#333333';
+                ctx.font = 'bold 16px Malgun Gothic';
+                ctx.fillText('구분', 50, y + 25);
+                ctx.fillText('두께', 280, y + 25);
+                ctx.fillText('길이', 450, y + 25);
+                ctx.fillText('수량', 620, y + 25);
+                
+                y += 40;
+                
+                // 경량철골 데이터
+                ctx.font = '16px Malgun Gothic';
+                let steelIndex = 0;
+                Object.keys(groupedBySteel).forEach(key => {
+                    const steel = groupedBySteel[key];
+                    
+                    // 배경 (교차 색상)
+                    if (steelIndex % 2 === 0) {
+                        ctx.fillStyle = '#ffffff';
+                    } else {
+                        ctx.fillStyle = '#f9f9f9';
+                    }
+                    ctx.fillRect(30, y, width - 60, 40);
+                    ctx.strokeStyle = '#e0e0e0';
+                    ctx.strokeRect(30, y, width - 60, 40);
+                    
+                    // 텍스트
+                    ctx.fillStyle = '#333333';
+                    ctx.fillText(steel.type, 50, y + 25);
+                    ctx.fillText(`${steel.thickness}mm`, 280, y + 25);
+                    ctx.fillText(`${steel.length}mm`, 450, y + 25);
+                    ctx.fillText(`${steel.count}개`, 620, y + 25);
+                    
+                    y += 40;
+                    steelIndex++;
+                });
+                
+                y += 20;
+            }
             
             // Canvas 높이 조정
             canvas.height = y + 40;
