@@ -3043,9 +3043,9 @@
             
             let infoHTML = '';
             if (isMobile) {
-                infoHTML = `<div class="info-message">💡 이미지를 저장한 후 카카오톡에서 파일로 전송하세요</div>`;
+                infoHTML = `<div class="info-message">💡 <strong>카카오톡</strong>: 이미지로 공유 | <strong>문자/이메일</strong>: 텍스트로 전송</div>`;
             } else {
-                infoHTML = `<div class="info-message">💡 PC에서는 텍스트를 카카오톡으로 전송하고,<br>이미지는 저장 후 파일로 전송하세요</div>`;
+                infoHTML = `<div class="info-message">💡 <strong>카카오톡</strong>: 이미지 저장 후 전송 | <strong>문자/이메일</strong>: 텍스트로 전송</div>`;
             }
             
             modal.innerHTML = `
@@ -3057,13 +3057,13 @@
                     ${infoHTML}
                     <div class="share-buttons">
                         <button class="share-btn kakao-btn" onclick="shareToKakaoText()">
-                            💬 카카오톡으로 전송
+                            💬 카카오톡 (이미지)
                         </button>
                         <button class="share-btn sms-btn" onclick="shareSMS()">
-                            💌 문자로 전송
+                            💌 문자 (텍스트)
                         </button>
                         <button class="share-btn email-btn" onclick="shareEmail()">
-                            📧 이메일로 전송
+                            📧 이메일 (텍스트)
                         </button>
                         <button class="share-btn cancel-btn" onclick="closeShareModal()">
                             취소
@@ -3668,20 +3668,34 @@
             shareToKakaoText();
         }
         
-        // 문자 전송 (이미지로)
+        // 문자 전송 (텍스트로)
         function shareSMS() {
             closeShareModal();
             
-            // 이미지 다운로드
-            downloadImage();
+            // 텍스트 요약 생성
+            const textSummary = generateSummaryText();
+            
+            // 문자 앱 열기
+            const smsUrl = `sms:?body=${encodeURIComponent(textSummary)}`;
+            window.location.href = smsUrl;
+            
+            showToast('💌 문자 앱이 열립니다!');
         }
         
-        // 이메일 전송 (이미지로)
+        // 이메일 전송 (텍스트로)
         function shareEmail() {
             closeShareModal();
             
-            // 이미지 다운로드
-            downloadImage();
+            // 텍스트 요약 생성
+            const textSummary = generateSummaryText();
+            
+            // 이메일 앱 열기
+            const subject = encodeURIComponent(`${currentSiteName} - 석고보드 각재 산출내역`);
+            const body = encodeURIComponent(textSummary);
+            const mailtoUrl = `mailto:?subject=${subject}&body=${body}`;
+            window.location.href = mailtoUrl;
+            
+            showToast('📧 이메일 앱이 열립니다!');
         }
         
         // ============================================
