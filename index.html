@@ -2872,8 +2872,11 @@
                 
                 hideLoading();
                 
-                // Web Share API로 공유
-                if (navigator.share && navigator.canShare) {
+                // 모바일/PC 구분하여 처리
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                if (isMobile && navigator.share && navigator.canShare) {
+                    // 모바일에서 Web Share API 사용
                     const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                     const shareData = {
                         title: `${currentSiteName} 산출 결과`,
@@ -2889,7 +2892,7 @@
                         downloadPDF(pdfBlob, fileName);
                     }
                 } else {
-                    // Web Share API 미지원시 다운로드
+                    // PC 또는 Web Share API 미지원시 다운로드
                     downloadPDF(pdfBlob, fileName);
                 }
                 
@@ -2915,7 +2918,13 @@
             document.body.removeChild(link);
             URL.revokeObjectURL(link.href);
             
-            alert('✅ PDF 파일이 다운로드되었습니다!\n\n다운로드된 파일을 카카오톡에서 공유하세요.');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                alert('✅ PDF 파일이 다운로드되었습니다!\n\n다운로드된 파일을 카카오톡에서 공유하세요.');
+            } else {
+                alert('✅ PDF 파일이 다운로드되었습니다!\n\n📁 다운로드 폴더에서 파일을 확인하세요.\n\n💬 카카오톡 공유 방법:\n1. 다운로드된 PDF 파일을 찾기\n2. 우클릭 → "연결 프로그램" → "카카오톡" 선택\n3. 또는 카카오톡에서 파일 첨부하여 전송');
+            }
         }
         
         // 문자 전송
