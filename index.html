@@ -3101,14 +3101,10 @@
             closeShareModal();
         }
         
-        // 산출 결과 요약 텍스트 생성
+        // 산출 결과 요약 텍스트 생성 (간결 버전)
         function generateSummaryText() {
-            let text = `━━━━━━━━━━━━━━━━━━\n`;
-            text += `📊 ${currentSiteName}\n`;
-            text += `   석고보드 각재 산출내역\n`;
-            text += `━━━━━━━━━━━━━━━━━━\n`;
-            text += `작성일: ${new Date().toLocaleString('ko-KR')}\n`;
-            text += `로스율: ${Math.round(currentLossRate * 100)}%\n\n`;
+            let text = `📊 ${currentSiteName}\n`;
+            text += `${new Date().toLocaleDateString('ko-KR')} (로스율 ${Math.round(currentLossRate * 100)}%)\n\n`;
             
             // 석고보드 종류별 집계
             const groupedByType = {};
@@ -3141,20 +3137,18 @@
                     if (wall.joistType === '목자재') {
                         const joistKey = wall.woodType;
                         if (!groupedByWood[joistKey]) {
-                            // 목자재 이름과 치수 매핑
                             let woodName = wall.woodType;
                             let woodSize = '';
                             if (wall.woodType === '한치각') {
                                 woodName = '한치각';
                                 woodSize = '30×30';
                             } else if (wall.woodType === '한치각반') {
-                                woodName = '한치각반 (순고 다루끼)';
+                                woodName = '한치각반';
                                 woodSize = '30×45';
                             } else if (wall.woodType.includes('SPF')) {
                                 woodName = wall.woodType;
                                 woodSize = '38×89';
                             } else if (wall.woodType.includes('×')) {
-                                // 이미 치수가 포함된 경우
                                 const parts = wall.woodType.split(' ');
                                 woodName = parts[0];
                                 woodSize = parts[0];
@@ -3166,7 +3160,6 @@
                             groupedByWood[joistKey] = { 
                                 name: woodName,
                                 size: woodSize,
-                                length: '2700mm',
                                 count: 0 
                             };
                         }
@@ -3181,7 +3174,6 @@
                     if (wall.joistType === '경량철골') {
                         const spacing = 450;
                         
-                        // 러너 계산
                         const runnerKey = `러너-${wall.steelThickness}-${wall.steelLength}`;
                         if (!groupedBySteel[runnerKey]) {
                             groupedBySteel[runnerKey] = {
@@ -3195,7 +3187,6 @@
                         runnerPieces *= (wall.faceDirection === '양면' ? 2 : 1);
                         groupedBySteel[runnerKey].count += Math.ceil(runnerPieces * (1 + currentLossRate));
                         
-                        // 스터드 계산
                         const studKey = `스터드-${wall.steelThickness}-${wall.steelLength}`;
                         if (!groupedBySteel[studKey]) {
                             groupedBySteel[studKey] = {
@@ -3214,46 +3205,34 @@
                 }
             });
             
-            // 석고보드 출력
-            text += `【 석고보드 】\n`;
-            text += `─────────────────\n`;
+            // 석고보드 출력 (한 줄로)
+            text += `[석고보드]\n`;
             Object.keys(groupedByType).forEach(key => {
                 const board = groupedByType[key];
-                text += `▪ ${board.type}석고보드\n`;
-                text += `  규격: ${board.size}\n`;
-                text += `  두께: ${board.thickness}\n`;
-                text += `  수량: ${board.totalBoards}장\n\n`;
+                text += `${board.type} ${board.size} ${board.thickness} - ${board.totalBoards}장\n`;
             });
             
-            // 목자재 출력
+            // 목자재 출력 (한 줄로)
             if (Object.keys(groupedByWood).length > 0) {
-                text += `【 목자재/각재 】\n`;
-                text += `─────────────────\n`;
+                text += `\n[목자재]\n`;
                 Object.keys(groupedByWood).forEach(key => {
                     const wood = groupedByWood[key];
-                    text += `▪ ${wood.name}\n`;
+                    text += `${wood.name}`;
                     if (wood.size) {
-                        text += `  규격: ${wood.size}\n`;
+                        text += ` ${wood.size}`;
                     }
-                    text += `  길이: ${wood.length}\n`;
-                    text += `  수량: ${wood.count}개\n\n`;
+                    text += ` - ${wood.count}개\n`;
                 });
             }
             
-            // 경량철골 출력
+            // 경량철골 출력 (한 줄로)
             if (Object.keys(groupedBySteel).length > 0) {
-                text += `【 경량철골 】\n`;
-                text += `─────────────────\n`;
+                text += `\n[경량철골]\n`;
                 Object.keys(groupedBySteel).forEach(key => {
                     const steel = groupedBySteel[key];
-                    text += `▪ ${steel.type}\n`;
-                    text += `  두께: ${steel.thickness}mm\n`;
-                    text += `  길이: ${steel.length}mm\n`;
-                    text += `  수량: ${steel.count}개\n\n`;
+                    text += `${steel.type} ${steel.thickness}mm ${steel.length}mm - ${steel.count}개\n`;
                 });
             }
-            
-            text += `━━━━━━━━━━━━━━━━━━`;
             
             return text;
         }
