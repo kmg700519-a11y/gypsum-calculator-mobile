@@ -3714,11 +3714,21 @@
             
             setTimeout(() => {
                 if (isMobile) {
-                    // 카카오톡 앱 열기 시도
+                    // 카카오톡 앱 + 채팅창 열기 시도
+                    // 방법 1: 카카오톡 앱 열기
                     window.location.href = 'kakaotalk://';
+                    
+                    // 방법 2: 잠시 후 채팅방 목록으로 이동 시도
+                    setTimeout(() => {
+                        try {
+                            window.location.href = 'kakaotalk://talk/chats';
+                        } catch (e) {
+                            console.log('채팅방 열기 실패:', e);
+                        }
+                    }, 1000);
                 }
                 
-                showToast('📥 이미지가 저장되었습니다!\n\n카카오톡 앱을 열고\n채팅방에서 이미지를 첨부해주세요.');
+                showToast('📥 이미지가 저장되었습니다!\n\n카카오톡 앱이 열렸습니다.\n채팅방에서 이미지를 첨부해주세요.');
             }, 500);
         }
         
