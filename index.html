@@ -3576,6 +3576,36 @@
             // 모바일 여부 확인
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
+            // A) 카카오 링크 SDK 다이얼로그 우선 시도 (수신자 선택창 자동 표시)
+            try {
+                if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized() && Kakao.Share && Kakao.Share.sendDefault) {
+                    const imageUrlFallback = (window.currentImageUrl && window.currentImageUrl.startsWith('http'))
+                        ? window.currentImageUrl
+                        : (location.origin + '/icons/icon-192.png');
+                    Kakao.Share.sendDefault({
+                        objectType: 'feed',
+                        content: {
+                            title: `📊 ${currentSiteName || '물량 산출 결과'}`,
+                            description: textSummary.slice(0, 990),
+                            imageUrl: imageUrlFallback,
+                            link: {
+                                mobileWebUrl: location.href,
+                                webUrl: location.href
+                            }
+                        },
+                        buttons: [
+                            {
+                                title: '열어보기',
+                                link: { mobileWebUrl: location.href, webUrl: location.href }
+                            }
+                        ]
+                    });
+                    return; // SDK 경로 성공 시 종료 (카카오 선택창이 뜸)
+                }
+            } catch (e) {
+                console.warn('Kakao.Share 다이얼로그 실패, 폴백로직으로 진행:', e);
+            }
+
             // 0) 모바일에서 파일 공유(Web Share Level 2)가 가능하면 결과 이미지를 직접 공유 (가장 편한 경로)
             if (isMobile && navigator.share && navigator.canShare) {
                 try {
