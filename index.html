@@ -3576,48 +3576,83 @@
             // 모바일 여부 확인
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
+            // 1) 먼저 사용자 제스처 내에서 클립보드에 복사 시도 (모바일/PC 공통)
+            //    이후 카카오 스킴 실행. 일부 브라우저는 네비게이션 후 복사를 차단하므로 순서를 보장
+            await copyToClipboardSimple(textSummary, { silentOnFail: true });
+            
             if (isMobile) {
                 // 모바일: 카카오톡 커스텀 스킴 사용
                 const encodedText = encodeURIComponent(textSummary);
                 const kakaoScheme = `kakaotalk://send?text=${encodedText}`;
                 
-                // 카카오톡 앱 실행
+                // 카카오톡 앱 실행 시도
                 window.location.href = kakaoScheme;
                 
-                // 카카오톡이 설치되지 않은 경우를 대비해 클립보드에도 복사
-                setTimeout(() => {
-                    copyToClipboardSimple(textSummary);
-                }, 500);
-                
-                showToast('✅ 카카오톡 앱이 열립니다!');
+                showToast('✅ 카카오톡으로 전송 준비됨! 열리는 앱에서 붙여넣기 하세요.');
             } else {
-                // PC: 클립보드에 복사
-                copyToClipboardSimple(textSummary);
+                // PC: 복사 완료 토스트만 안내
+                showToast('📋 클립보드에 복사되었습니다! 카카오톡에 붙여넣기 하세요.');
             }
         }
         
         // 간단한 클립보드 복사
-        function copyToClipboardSimple(text) {
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showToast('📋 클립보드에 복사되었습니다!\n카카오톡에 붙여넣기 하세요.');
+        function copyToClipboardSimple(text, options) {
+            const opts = options || {};
+            if (navigator.clipboard && window.isSecureContext) {
+                return navigator.clipboard.writeText(text).then(() => {
+                    if (!opts.silentOnFail) {
+                        showToast('📋 클립보드에 복사되었습니다!\n카카오톡에 붙여넣기 하세요.');
+                    }
                 }).catch(() => {
-                    alert('복사 실패\n\n' + text);
+                    // secure clipboard 실패 시 execCommand로 재시도 (사용자 제스처 내에서 동기 동작)
+                    try {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = text;
+                        textarea.style.position = 'fixed';
+                        textarea.style.opacity = '0';
+                        document.body.appendChild(textarea);
+                        textarea.focus();
+                        textarea.select();
+                        const ok = document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        if (!opts.silentOnFail) {
+                            if (ok) {
+                                showToast('📋 클립보드에 복사되었습니다!\n카카오톡에 붙여넣기 하세요.');
+                            } else {
+                                alert('복사 실패\n\n' + text);
+                            }
+                        }
+                    } catch (e) {
+                        if (!opts.silentOnFail) {
+                            alert('복사 실패\n\n' + text);
+                        }
+                    }
                 });
-            } else {
+            }
+            // navigator.clipboard 미지원 환경
+            try {
                 const textarea = document.createElement('textarea');
                 textarea.value = text;
                 textarea.style.position = 'fixed';
                 textarea.style.opacity = '0';
                 document.body.appendChild(textarea);
+                textarea.focus();
                 textarea.select();
-                try {
-                    document.execCommand('copy');
-                    showToast('📋 클립보드에 복사되었습니다!\n카카오톡에 붙여넣기 하세요.');
-                } catch (err) {
+                const ok = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if (!opts.silentOnFail) {
+                    if (ok) {
+                        showToast('📋 클립보드에 복사되었습니다!\n카카오톡에 붙여넣기 하세요.');
+                    } else {
+                        alert('복사 실패\n\n' + text);
+                    }
+                }
+                return Promise.resolve();
+            } catch (e) {
+                if (!opts.silentOnFail) {
                     alert('복사 실패\n\n' + text);
                 }
-                document.body.removeChild(textarea);
+                return Promise.resolve();
             }
         }
         
