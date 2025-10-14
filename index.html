@@ -3579,29 +3579,26 @@
             // A) 카카오 링크 SDK는 링크(미리보기/버튼)를 강제하여 '열어보기'가 노출됩니다.
             //    요구사항상 URL/버튼을 없애기 위해 SDK 경로를 사용하지 않습니다.
 
-            // 0) 모바일에서 파일 공유(Web Share Level 2)가 가능하면 결과 이미지를 직접 공유 (가장 편한 경로)
-            if (isMobile && navigator.share && navigator.canShare) {
+            // 0) 텍스트만 Web Share (시스템 공유 시트 → 카카오 선택 → 대화상대 선택)
+            if (isMobile && navigator.share) {
                 try {
-                    const blob = await createResultsImageBlob();
-                    const fileName = `석고보드_물량산출_${currentSiteName}_${new Date().toISOString().slice(0,10)}.png`;
-                    const file = new File([blob], fileName, { type: 'image/png' });
-                    if (navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file] });
-                        showToast('✅ 카카오톡으로 이미지가 전송되었습니다!');
+                    await navigator.share({ text: textSummary });
+                    showToast('✅ 전송 완료!');
+                    return;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') {
+                        // 사용자가 공유 시트를 닫은 경우는 조용히 종료
                         return;
                     }
-                } catch (e) {
-                    // 이미지 공유 실패 시 아래 경로로 폴백
-                    console.warn('이미지 공유 실패, 텍스트 방식으로 폴백:', e);
+                    console.warn('텍스트 Web Share 실패, 폴백 진행:', e);
                 }
             }
 
-            // 1) 먼저 사용자 제스처 내에서 클립보드에 복사 시도 (모바일/PC 공통)
-            //    이후 카카오 스킴 실행. 일부 브라우저는 네비게이션 후 복사를 차단하므로 순서를 보장
-            await copyToClipboardSimple(textSummary, { silentOnFail: true });
+            // 1) Web Share 미지원/실패 시: 먼저 텍스트 복사
+            await copyToClipboardSimple(textSummary, { silentOnFail: false });
             
             if (isMobile) {
-                // 모바일: 텍스트 파라미터 없이 카카오톡 앱만 실행 (URL 미리보기 생성 방지)
+                // 모바일: 카카오 앱만 실행하여 사용자에게 대화방 선택 기회를 제공
                 const kakaoScheme = 'kakaotalk://send';
                 window.location.href = kakaoScheme;
                 showToast('✅ 카카오톡이 열립니다. 대화창에서 붙여넣기만 하세요.');
