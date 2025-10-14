@@ -3576,6 +3576,23 @@
             // 모바일 여부 확인
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
+            // 0) 모바일에서 파일 공유(Web Share Level 2)가 가능하면 결과 이미지를 직접 공유 (가장 편한 경로)
+            if (isMobile && navigator.share && navigator.canShare) {
+                try {
+                    const blob = await createResultsImageBlob();
+                    const fileName = `석고보드_물량산출_${currentSiteName}_${new Date().toISOString().slice(0,10)}.png`;
+                    const file = new File([blob], fileName, { type: 'image/png' });
+                    if (navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file] });
+                        showToast('✅ 카카오톡으로 이미지가 전송되었습니다!');
+                        return;
+                    }
+                } catch (e) {
+                    // 이미지 공유 실패 시 아래 경로로 폴백
+                    console.warn('이미지 공유 실패, 텍스트 방식으로 폴백:', e);
+                }
+            }
+
             // 1) 먼저 사용자 제스처 내에서 클립보드에 복사 시도 (모바일/PC 공통)
             //    이후 카카오 스킴 실행. 일부 브라우저는 네비게이션 후 복사를 차단하므로 순서를 보장
             await copyToClipboardSimple(textSummary, { silentOnFail: true });
