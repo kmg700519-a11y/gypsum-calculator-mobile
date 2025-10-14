@@ -3581,7 +3581,7 @@
                 if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized() && Kakao.Share && Kakao.Share.sendDefault) {
                     const imageUrlFallback = (window.currentImageUrl && window.currentImageUrl.startsWith('http'))
                         ? window.currentImageUrl
-                        : (location.origin + '/icons/icon-192.png');
+                        : 'https://kmg700519-a11y.github.io/gypsum-calculator-mobile/icons/icon-192.png';
                     Kakao.Share.sendDefault({
                         objectType: 'feed',
                         content: {
