@@ -3581,14 +3581,13 @@
             await copyToClipboardSimple(textSummary, { silentOnFail: true });
             
             if (isMobile) {
-                // 모바일: 카카오톡 커스텀 스킴 사용
-                const encodedText = encodeURIComponent(textSummary);
-                const kakaoScheme = `kakaotalk://send?text=${encodedText}`;
+                // 모바일: 텍스트 파라미터 없이 카카오톡 앱만 실행 (일부 브라우저의 URL 공유 강제 회피)
+                const kakaoScheme = 'kakaotalk://send';
                 
                 // 카카오톡 앱 실행 시도
                 window.location.href = kakaoScheme;
                 
-                showToast('✅ 카카오톡으로 전송 준비됨! 열리는 앱에서 붙여넣기 하세요.');
+                showToast('✅ 카카오톡이 열립니다. 대화창에서 길게 눌러 붙여넣기 하세요.');
             } else {
                 // PC: 복사 완료 토스트만 안내
                 showToast('📋 클립보드에 복사되었습니다! 카카오톡에 붙여넣기 하세요.');
