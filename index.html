@@ -3579,26 +3579,14 @@
             // A) 카카오 링크 SDK 다이얼로그 우선 시도 (수신자 선택창 자동 표시)
             try {
                 if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized() && Kakao.Share && Kakao.Share.sendDefault) {
-                    const imageUrlFallback = (window.currentImageUrl && window.currentImageUrl.startsWith('http'))
-                        ? window.currentImageUrl
-                        : 'https://kmg700519-a11y.github.io/gypsum-calculator-mobile/icons/icon-192.png';
+                    // 텍스트 전용 템플릿: 메시지 내 버튼/미리보기 제거 (링크 필수 제약으로 링크는 보이지 않게만 설정)
                     Kakao.Share.sendDefault({
-                        objectType: 'feed',
-                        content: {
-                            title: `📊 ${currentSiteName || '물량 산출 결과'}`,
-                            description: textSummary.slice(0, 990),
-                            imageUrl: imageUrlFallback,
-                            link: {
-                                mobileWebUrl: location.href,
-                                webUrl: location.href
-                            }
-                        },
-                        buttons: [
-                            {
-                                title: '열어보기',
-                                link: { mobileWebUrl: location.href, webUrl: location.href }
-                            }
-                        ]
+                        objectType: 'text',
+                        text: textSummary.slice(0, 990),
+                        link: {
+                            mobileWebUrl: 'https://kmg700519-a11y.github.io',
+                            webUrl: 'https://kmg700519-a11y.github.io'
+                        }
                     });
                     return; // SDK 경로 성공 시 종료 (카카오 선택창이 뜸)
                 }
