@@ -3576,8 +3576,23 @@
             // 모바일 여부 확인
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
-            // A) 카카오 링크 SDK는 링크(미리보기/버튼)를 강제하여 '열어보기'가 노출됩니다.
-            //    요구사항상 URL/버튼을 없애기 위해 SDK 경로를 사용하지 않습니다.
+            // A) 카카오 링크 SDK 다이얼로그 우선 시도 (수신자 선택창 자동 표시)
+            try {
+                if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized() && Kakao.Share && Kakao.Share.sendDefault) {
+                    // 텍스트 전용 템플릿: '자세히 보기'는 뜨지만 링크는 우리 앱 경로로 정확히 설정
+                    Kakao.Share.sendDefault({
+                        objectType: 'text',
+                        text: textSummary.slice(0, 990),
+                        link: {
+                            mobileWebUrl: 'https://kmg700519-a11y.github.io/gypsum-calculator-mobile/',
+                            webUrl: 'https://kmg700519-a11y.github.io/gypsum-calculator-mobile/'
+                        }
+                    });
+                    return; // SDK 경로 성공 시 종료 (카카오 선택창이 뜸)
+                }
+            } catch (e) {
+                console.warn('Kakao.Share 다이얼로그 실패, 폴백로직으로 진행:', e);
+            }
 
             // 0) 텍스트만 Web Share (시스템 공유 시트 → 카카오 선택 → 대화상대 선택)
             if (isMobile && navigator.share) {
