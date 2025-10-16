@@ -1016,13 +1016,13 @@
                     <div class="menu-icon">🧱</div>
                     <div class="menu-text">벽체선택</div>
                 </div>
+                <div class="menu-item" onclick="showCeilingPlaceholder()">
+                    <div class="menu-icon">📊</div>
+                    <div class="menu-text">천장선택</div>
+                </div>
                 <div class="menu-item" onclick="calculateMaterials()">
                     <div class="menu-icon">📐</div>
                     <div class="menu-text">산출</div>
-                </div>
-                <div class="menu-item" onclick="showCalculationHistory()">
-                    <div class="menu-icon">📊</div>
-                    <div class="menu-text">산출내역 보기</div>
                 </div>
             </div>
 
@@ -4364,6 +4364,11 @@
         // 전화 걸기
         function callPhone() {
             window.open('tel:010-4087-1436');
+        }
+
+        // 천장선택 - 추후 업데이트 예정 안내
+        function showCeilingPlaceholder() {
+            alert('천장선택 기능은 추후 업데이트 예정입니다.');
         }
     </script>
 </body>
