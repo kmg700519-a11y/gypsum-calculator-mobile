@@ -1071,6 +1071,13 @@
                 </div>
             </div>
         </div>
+
+        <!-- 하단 배너 -->
+        <div class="banner" onclick="callPhone()" style="margin-top: 20px;">
+            <div class="banner-text">
+                전기공사, 정보통신공사, 소방전기공사 (신축, 증축, 인테리어, 승압, 증설, 전기안전검사, 통신준공, 소방완비) | 부산경남 전기공사 전문업체 이에스테크 | 전기공사업 부산-02323 | 문의 010-4087-1436
+            </div>
+        </div>
     </div>
 
     <!-- 불러오기 옵션 선택창 -->
@@ -2588,10 +2595,36 @@
                 selectedWall.points.endX = x;
                 selectedWall.points.endY = y;
                 
-                const pixelWidth = Math.abs(selectedWall.points.endX - selectedWall.points.startX);
-                const actualWidth = Math.round(pixelWidth * 10);
-                document.getElementById('wallWidth').value = actualWidth;
-                document.getElementById('wallWidth').readOnly = false;
+                // 첫 번째 벽체: 사용자 입력값 그대로 사용
+                // 두 번째 이후: 첫 번째 벽체의 화면 거리 비율로 계산
+                const wallWidthInput = document.getElementById('wallWidth');
+                
+                if (walls.length === 0) {
+                    // 첫 번째 벽체: 비워두고 사용자가 직접 입력
+                    wallWidthInput.value = '';
+                    wallWidthInput.placeholder = '직접 입력 (mm)';
+                } else {
+                    // 두 번째 이후: 첫 번째 벽체 기준으로 비율 계산
+                    const firstWall = walls[0];
+                    if (firstWall.points && firstWall.width) {
+                        const firstPixelWidth = Math.abs(firstWall.points.endX - firstWall.points.startX);
+                        const currentPixelWidth = Math.abs(selectedWall.points.endX - selectedWall.points.startX);
+                        
+                        if (firstPixelWidth > 0) {
+                            const ratio = currentPixelWidth / firstPixelWidth;
+                            const calculatedWidth = Math.round(firstWall.width * ratio);
+                            wallWidthInput.value = calculatedWidth;
+                            wallWidthInput.placeholder = '계산된 기본값 (수정 가능)';
+                        } else {
+                            wallWidthInput.value = '';
+                            wallWidthInput.placeholder = '직접 입력 (mm)';
+                        }
+                    } else {
+                        wallWidthInput.value = '';
+                        wallWidthInput.placeholder = '직접 입력 (mm)';
+                    }
+                }
+                wallWidthInput.readOnly = false;
                 
                 redrawAll();
                 
