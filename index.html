@@ -1329,7 +1329,7 @@
 
     <!-- 숨겨진 파일 입력 요소 -->
     <input type="file" id="projectFileInput" accept=".json,application/json,text/json" style="display: none;" onchange="handleProjectFile(this)">
-    <input type="file" id="imageFileInput" accept="image/*" style="display: none;" onchange="handleImageFile(this)">
+    <input type="file" id="imageFileInput" accept="image/*" capture="environment" style="display: none;" onchange="handleImageFile(this)">
     <input type="file" id="pdfFileInput" accept=".pdf,application/pdf" style="display: none;" onchange="handlePDFFile(this)">
 
     <!-- 벽체 메뉴 툴팁 -->
@@ -1541,6 +1541,25 @@
         function initCanvas() {
             canvas = document.getElementById('drawingCanvas');
             ctx = canvas.getContext('2d');
+            
+            // 고해상도 렌더링 설정
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            
+            // 캔버스 크기를 실제 표시 크기로 설정
+            canvas.width = rect.width * devicePixelRatio;
+            canvas.height = rect.height * devicePixelRatio;
+            
+            // CSS 크기는 원래대로
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+            
+            // 컨텍스트 스케일링
+            ctx.scale(devicePixelRatio, devicePixelRatio);
+            
+            // 고품질 이미지 스무딩
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             
             canvas.addEventListener('mousedown', startDrawing);
             canvas.addEventListener('mousemove', draw);
@@ -2336,14 +2355,19 @@
                 pdfjsLib.getDocument(typedArray).promise.then(function(pdf) {
                     // 첫 페이지를 이미지로 변환
                     pdf.getPage(1).then(function(page) {
-                        // 캔버스 크기에 맞게 스케일 조정
-                        const viewport = page.getViewport({scale: 1.5});
+                        // 고해상도 PDF 렌더링
+                        const devicePixelRatio = window.devicePixelRatio || 1;
+                        const viewport = page.getViewport({scale: 2.0 * devicePixelRatio});
                         
                         // 임시 캔버스 생성
                         const tempCanvas = document.createElement('canvas');
                         tempCanvas.width = viewport.width;
                         tempCanvas.height = viewport.height;
                         const tempCtx = tempCanvas.getContext('2d');
+                        
+                        // 고품질 렌더링 설정
+                        tempCtx.imageSmoothingEnabled = true;
+                        tempCtx.imageSmoothingQuality = 'high';
                         
                         const renderContext = {
                             canvasContext: tempCtx,
@@ -2516,8 +2540,8 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // 이미지 크기 최적화 (최대 2000x2000)
-                    const maxSize = 2000;
+                    // 고해상도 이미지 처리 (최대 4000x4000)
+                    const maxSize = 4000;
                     let width = img.width;
                     let height = img.height;
                     
@@ -2531,11 +2555,16 @@
                         }
                     }
                     
-                    // 최적화된 이미지 생성
+                    // 고품질 이미지 생성
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = width;
                     tempCanvas.height = height;
                     const tempCtx = tempCanvas.getContext('2d');
+                    
+                    // 고품질 렌더링 설정
+                    tempCtx.imageSmoothingEnabled = true;
+                    tempCtx.imageSmoothingQuality = 'high';
+                    
                     tempCtx.drawImage(img, 0, 0, width, height);
                     
                     const optimizedImg = new Image();
@@ -2547,7 +2576,8 @@
                         hideLoading();
                         alert('✅ 배경 이미지가 설정되었습니다!');
                     };
-                    optimizedImg.src = tempCanvas.toDataURL('image/jpeg', 0.8);
+                    // JPEG 품질을 0.92로 향상
+                    optimizedImg.src = tempCanvas.toDataURL('image/jpeg', 0.92);
                 };
                 img.onerror = function() {
                     hideLoading();
