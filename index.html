@@ -4155,7 +4155,7 @@
 
         // 줌 아웃
         function zoomOut() {
-            if (zoomLevel > 0.3) {
+            if (zoomLevel > 0.1) {
                 zoomLevel -= 0.2;
                 redrawAll();
                 updateZoomInfo();
@@ -4187,7 +4187,7 @@
             const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
             const newZoom = zoomLevel * zoomFactor;
             
-            if (newZoom >= 0.3 && newZoom <= 3) {
+            if (newZoom >= 0.1 && newZoom <= 3) {
                 const zoomX = mouseX - panX;
                 const zoomY = mouseY - panY;
                 
@@ -4265,7 +4265,7 @@
                     const scale = distance / lastPinchDistance;
                     const newZoom = zoomLevel * scale;
                     
-                    if (newZoom >= 0.3 && newZoom <= 5) {
+                    if (newZoom >= 0.1 && newZoom <= 5) {
                         const centerX = (touch1.clientX + touch2.clientX) / 2;
                         const centerY = (touch1.clientY + touch2.clientY) / 2;
                         const rect = canvas.getBoundingClientRect();
