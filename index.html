@@ -1959,6 +1959,13 @@
 
         // 이전 작업 취소 (새로 추가된 함수)
         function undoLast() {
+            // 우선 벽체선택 A점이 지정된 경우 취소
+            if (selectedWall && selectedWall.points) {
+                selectedWall = null;
+                redrawAll();
+                return;
+            }
+
             if (drawnLines.length > 0) {
                 drawnLines.pop();
                 redrawAll();
