@@ -2383,9 +2383,76 @@
         }
 
         // PDF 파일 불러오기
-        function loadPDFFile() {
+        async function loadPDFFile() {
             closeLoadOptions();
+            // 최신 파일 선택 API를 우선 사용하여 카메라 제공자 노출을 회피
+            if (window.showOpenFilePicker) {
+                try {
+                    const [handle] = await window.showOpenFilePicker({
+                        multiple: false,
+                        types: [
+                            {
+                                description: 'PDF Files',
+                                accept: { 'application/pdf': ['.pdf'] }
+                            }
+                        ],
+                        excludeAcceptAllOption: true
+                    });
+                    const file = await handle.getFile();
+                    await processPDFFileFromFile(file);
+                    return;
+                } catch (err) {
+                    // 취소 등 에러면 폴백 실행
+                    console.log('showOpenFilePicker failed, fallback to input:', err);
+                }
+            }
+            // 폴백: 기존 input으로 처리
             document.getElementById('pdfFileInput').click();
+        }
+
+        // File 객체로부터 PDF 처리 (showOpenFilePicker용)
+        async function processPDFFileFromFile(file) {
+            if (!file) return;
+            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                alert('PDF 파일만 선택해주세요.');
+                return;
+            }
+            if (typeof pdfjsLib === 'undefined') {
+                alert('❌ PDF.js 라이브러리를 로드할 수 없습니다.\n페이지를 새로고침한 후 다시 시도해주세요.');
+                return;
+            }
+            if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+            }
+            showLoading();
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const typedArray = new Uint8Array(arrayBuffer);
+                const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                const page = await pdf.getPage(1);
+                const devicePixelRatio = window.devicePixelRatio || 1;
+                const viewport = page.getViewport({ scale: 2.0 * devicePixelRatio });
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = viewport.width;
+                tempCanvas.height = viewport.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.imageSmoothingEnabled = true;
+                tempCtx.imageSmoothingQuality = 'high';
+                await page.render({ canvasContext: tempCtx, viewport }).promise;
+                const img = new Image();
+                img.onload = function() {
+                    backgroundImage = img;
+                    document.getElementById('drawingTools').style.display = 'flex';
+                    document.getElementById('canvasContainer').style.display = 'block';
+                    redrawAll();
+                    hideLoading();
+                    alert('✅ PDF가 배경으로 설정되었습니다!');
+                };
+                img.src = tempCanvas.toDataURL('image/png');
+            } catch (error) {
+                hideLoading();
+                alert('❌ PDF 파일을 처리하는 중 오류가 발생했습니다: ' + error.message);
+            }
         }
         
         // PDF 파일 처리 - 캔버스 배경으로 불러오기
