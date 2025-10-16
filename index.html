@@ -1460,16 +1460,7 @@
             if (mainShown || wallModalShown) {
                 const shouldSave = confirm('뒤로 가기 전에 현재 작업을 저장하시겠습니까?');
                 if (shouldSave) {
-                    const siteInput = document.getElementById('siteName');
-                    let name = siteInput ? siteInput.value.trim() : '';
-                    if (!name) {
-                        const suggested = currentSiteName || '새현장';
-                        const entered = prompt('현장명을 입력하세요', suggested);
-                        if (entered && siteInput) {
-                            siteInput.value = entered.trim();
-                        }
-                    }
-                    saveProject();
+                    showSiteNameModal();
                 }
 
                 if (wallModalShown) {
@@ -1485,6 +1476,66 @@
                 }
             }
         });
+
+        // 현장명 수정 모달 표시
+        function showSiteNameModal() {
+            const currentName = document.getElementById('siteName').value.trim() || currentSiteName || '새현장';
+            const newName = prompt('현장명을 입력하세요', currentName);
+            if (newName && newName.trim()) {
+                document.getElementById('siteName').value = newName.trim();
+                currentSiteName = newName.trim();
+                saveProject();
+            }
+        }
+
+        // 프로젝트 삭제
+        function deleteProject(projectName) {
+            if (confirm(`"${projectName}" 프로젝트를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+                try {
+                    // 프로젝트 데이터 삭제
+                    localStorage.removeItem('gypsum_project_' + projectName);
+                    localStorage.removeItem('gypsum_walls_' + projectName);
+                    localStorage.removeItem('gypsum_calculation_' + projectName);
+                    
+                    // 프로젝트 목록에서 제거
+                    let projectList = JSON.parse(localStorage.getItem('gypsum_project_list') || '[]');
+                    projectList = projectList.filter(p => p.name !== projectName);
+                    localStorage.setItem('gypsum_project_list', JSON.stringify(projectList));
+                    
+                    alert('✅ 프로젝트가 삭제되었습니다.');
+                    
+                    // 모달 새로고침
+                    const modal = document.querySelector('div[style*="position: fixed"]');
+                    if (modal) {
+                        modal.remove();
+                        loadProject(); // 목록 다시 표시
+                    }
+                } catch (error) {
+                    alert('❌ 프로젝트 삭제 중 오류가 발생했습니다: ' + error.message);
+                }
+            }
+        }
+
+        // 산출내역 삭제
+        function deleteCalculation(projectName) {
+            if (confirm(`"${projectName}" 산출내역을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+                try {
+                    // 산출 데이터만 삭제 (프로젝트 데이터는 유지)
+                    localStorage.removeItem('gypsum_calculation_' + projectName);
+                    
+                    alert('✅ 산출내역이 삭제되었습니다.');
+                    
+                    // 모달 새로고침
+                    const modal = document.querySelector('div[style*="position: fixed"]');
+                    if (modal) {
+                        modal.remove();
+                        loadCalculationHistory(); // 목록 다시 표시
+                    }
+                } catch (error) {
+                    alert('❌ 산출내역 삭제 중 오류가 발생했습니다: ' + error.message);
+                }
+            }
+        }
 
         // 캔버스 초기화
         function initCanvas() {
@@ -2181,10 +2232,15 @@
                 if (calcData) {
                     const data = JSON.parse(calcData);
                     listHTML += `
-                        <li style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer;"
-                            onclick="loadSavedCalculation('${project.name}')">
-                            <strong>📊 ${project.name}</strong><br>
-                            <small>${data.lastModified || project.lastModified}</small>
+                        <li style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="cursor: pointer; flex: 1;" onclick="loadSavedCalculation('${project.name}')">
+                                <strong>📊 ${project.name}</strong><br>
+                                <small>${data.lastModified || project.lastModified}</small>
+                            </div>
+                            <button onclick="deleteCalculation('${project.name}'); event.stopPropagation();" 
+                                    style="background: #ff6b6b; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">
+                                삭제
+                            </button>
                         </li>
                     `;
                 }
@@ -2518,10 +2574,15 @@
             let listHTML = '<h3>저장된 프로젝트</h3><ul style="list-style: none; padding: 0;">';
             projectList.forEach((project) => {
                 listHTML += `
-                    <li style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; cursor: pointer;"
-                        onclick="loadSelectedProject('${project.name}')">
-                        <strong>${project.name}</strong><br>
-                        <small>${project.lastModified}</small>
+                    <li style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="cursor: pointer; flex: 1;" onclick="loadSelectedProject('${project.name}')">
+                            <strong>${project.name}</strong><br>
+                            <small>${project.lastModified}</small>
+                        </div>
+                        <button onclick="deleteProject('${project.name}'); event.stopPropagation();" 
+                                style="background: #ff6b6b; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-size: 12px;">
+                            삭제
+                        </button>
                     </li>
                 `;
             });
