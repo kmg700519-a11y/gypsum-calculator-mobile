@@ -1093,8 +1093,8 @@
                 <button class="btn btn-primary" onclick="loadCalculationHistory()">
                     📊 산출내역 불러오기
                 </button>
-                <button class="btn btn-primary" onclick="loadFromFile()">
-                    📁 내 기기에서 불러오기
+                <button class="btn btn-primary" onclick="openImagePickOptions()">
+                    🖼️ 사진 및 이미지
                 </button>
                 
                 <button class="btn btn-primary" onclick="loadPDFFile()">
@@ -1328,6 +1328,7 @@
     <!-- 숨겨진 파일 입력 요소 -->
     <input type="file" id="projectFileInput" accept=".json,application/json,text/json" style="display: none;" onchange="handleProjectFile(this)">
     <input type="file" id="imageFileInput" accept="image/*" capture="environment" style="display: none;" onchange="handleImageFile(this)">
+    <input type="file" id="galleryImageInput" accept="image/*" style="display: none;" onchange="handleImageFile(this)">
     <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;" onchange="handlePDFFile(this)">
 
     <!-- 벽체 메뉴 툴팁 -->
@@ -2318,9 +2319,19 @@
         }
 
         // 내 기기에서 불러오기 (모든 경로에서 검색 가능)
-        function loadFromFile() {
+        function openImagePickOptions() {
             closeLoadOptions();
-            document.getElementById('projectFileInput').click();
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 3500; display: flex; justify-content: center; align-items: center;';
+            modal.innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 10px;">
+                    <h3 style="margin: 0 0 10px 0;">사진 가져오기</h3>
+                    <button class="btn btn-primary" onclick="document.getElementById('galleryImageInput').click(); this.closest('div[style*=position]').remove()">갤러리</button>
+                    <button class="btn btn-primary" onclick="document.getElementById('imageFileInput').click(); this.closest('div[style*=position]').remove()">내파일</button>
+                    <button class="btn btn-secondary" onclick="this.closest('div[style*=position]').remove()">취소</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
         }
 
         // 이미지를 배경으로 불러오기
