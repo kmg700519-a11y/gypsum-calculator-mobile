@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>스크린샷 생성기</title>
+</head>
+<body>
+    <canvas id="canvas" width="1080" height="1920" style="border:1px solid #ccc;"></canvas>
+    <br><br>
+    <button onclick="downloadImage('splash')">스플래시 화면 다운로드</button>
+    <button onclick="downloadImage('main')">메인 인터페이스 다운로드</button>
+    <button onclick="downloadImage('load')">불러오기 옵션 다운로드</button>
+    <button onclick="downloadImage('wall')">벽체 정보 입력 다운로드</button>
+    <button onclick="downloadImage('result')">물량 산출 결과 다운로드</button>
+    <button onclick="downloadImage('share')">공유 옵션 다운로드</button>
+    <button onclick="downloadImage('floor')">바닥 평면도 다운로드</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function createScreenshot(type) {
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, 1080, 1920);
+            
+            // 상태바
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, 1080, 60);
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px Arial';
+            ctx.fillText('KT 11:27', 20, 35);
+            ctx.fillText('94%', 1000, 35);
+            
+            if (type === 'splash') {
+                // 스플래시 화면
+                ctx.fillStyle = '#6a5acd';
+                ctx.fillRect(0, 60, 1080, 1860);
+                
+                // 크레인 아이콘
+                ctx.fillStyle = '#ffd700';
+                ctx.font = '120px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('🏗️', 540, 400);
+                
+                // 텍스트
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 24px Arial';
+                ctx.fillText('부산경남 전기공사 전문업체 이에스테크', 540, 600);
+                ctx.font = '20px Arial';
+                ctx.fillText('전기공사업 부산-02323', 540, 650);
+                ctx.fillText('문의: 010-4087-1436', 540, 700);
+                ctx.fillText('화면을 클릭하거나 ESC키를 누르면 바로 시작됩니다', 540, 800);
+                
+            } else if (type === 'main') {
+                // 메인 인터페이스
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 60, 1080, 1860);
+                
+                // 현장명 입력
+                ctx.fillStyle = '#000';
+                ctx.font = '18px Arial';
+                ctx.fillText('현장명:', 50, 100);
+                ctx.strokeRect(120, 80, 200, 30);
+                ctx.fillText('새현장', 130, 100);
+                
+                // 도구 버튼들
+                const tools = [
+                    {name: '새로 그리기', icon: '✏️', x: 50, y: 150},
+                    {name: '불러오기', icon: '📁', x: 200, y: 150},
+                    {name: '저장하기', icon: '💾', x: 350, y: 150},
+                    {name: '벽체선택', icon: '🧱', x: 500, y: 150},
+                    {name: '천장선택', icon: '▭', x: 650, y: 150},
+                    {name: '산출', icon: '📊', x: 800, y: 150},
+                    {name: '그리기', icon: '✏️', x: 50, y: 250},
+                    {name: '직선', icon: '📏', x: 200, y: 250},
+                    {name: '지우개', icon: '🗑️', x: 350, y: 250},
+                    {name: '이전', icon: '↶', x: 500, y: 250},
+                    {name: '카메라', icon: '📷', x: 650, y: 250},
+                    {name: '그림전체지우기', icon: '🗑️', x: 800, y: 250}
+                ];
+                
+                tools.forEach(tool => {
+                    ctx.fillStyle = '#e0e0e0';
+                    ctx.fillRect(tool.x, tool.y, 120, 80);
+                    ctx.strokeRect(tool.x, tool.y, 120, 80);
+                    ctx.fillStyle = '#000';
+                    ctx.font = '24px Arial';
+                    ctx.fillText(tool.icon, tool.x + 50, tool.y + 40);
+                    ctx.font = '12px Arial';
+                    ctx.fillText(tool.name, tool.x + 10, tool.y + 60);
+                });
+                
+                // 캔버스 영역
+                ctx.strokeStyle = '#ccc';
+                ctx.strokeRect(50, 350, 980, 1200);
+                ctx.fillStyle = '#f9f9f9';
+                ctx.fillRect(51, 351, 978, 1199);
+                
+            } else if (type === 'load') {
+                // 불러오기 옵션 모달
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.fillRect(0, 0, 1080, 1920);
+                
+                // 모달 박스
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(240, 600, 600, 500);
+                ctx.strokeRect(240, 600, 600, 500);
+                
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('불러오기 옵션 선택', 540, 650);
+                
+                // 버튼들
+                const buttons = [
+                    {name: '현장 불러오기', icon: '🏗️', y: 700},
+                    {name: '산출내역 불러오기', icon: '📊', y: 780},
+                    {name: '사진 및 동영상', icon: '🖼️', y: 860},
+                    {name: '내파일(PDF) 불러오기', icon: '📄', y: 940}
+                ];
+                
+                buttons.forEach(btn => {
+                    ctx.fillStyle = '#6a5acd';
+                    ctx.fillRect(280, btn.y, 520, 60);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '18px Arial';
+                    ctx.fillText(btn.icon + ' ' + btn.name, 540, btn.y + 35);
+                });
+                
+                // 취소 버튼
+                ctx.fillStyle = '#ccc';
+                ctx.fillRect(280, 1020, 520, 50);
+                ctx.fillStyle = '#000';
+                ctx.fillText('취소', 540, 1050);
+                
+            } else if (type === 'wall') {
+                // 벽체 정보 입력 폼
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 60, 1080, 1860);
+                
+                // 제목
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('벽체 정보 입력', 540, 120);
+                
+                // 폼 필드들
+                const fields = [
+                    {label: '벽체 명칭:', y: 180, value: '예: 화장실벽, 아트월, 사무실 우'},
+                    {label: '석고보드 종류:', y: 250, value: '일반석고보드 ▼'},
+                    {label: '석고보드 크기:', y: 320, value: '900×1800mm (일반) ▼'},
+                    {label: '석고보드 두께:', y: 390, value: '9.5mm (일반) ▼'},
+                    {label: '벽체길이 (mm):', y: 460, value: '직접 입력 (mm)'},
+                    {label: '석고마감높이 (mm):', y: 530, value: '2800'},
+                    {label: '시공면 선택:', y: 600, value: ''}
+                ];
+                
+                fields.forEach(field => {
+                    ctx.fillStyle = '#000';
+                    ctx.font = '18px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(field.label, 50, field.y);
+                    ctx.strokeRect(250, field.y - 20, 300, 30);
+                    ctx.fillStyle = '#666';
+                    ctx.fillText(field.value, 260, field.y);
+                });
+                
+            } else if (type === 'result') {
+                // 물량 산출 결과
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 60, 1080, 1860);
+                
+                // 제목
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('물량 산출 결과', 540, 120);
+                
+                // 로스율
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(50, 150, 200, 40);
+                ctx.fillStyle = '#000';
+                ctx.font = '16px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('로스율: 10% ▼', 60, 175);
+                
+                // 결과 테이블
+                ctx.fillStyle = '#e6f3ff';
+                ctx.fillRect(50, 220, 980, 400);
+                ctx.strokeRect(50, 220, 980, 400);
+                
+                // 테이블 헤더
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 16px Arial';
+                const headers = ['종류', '크기', '벽체명', '면적(m²)', '수량(장)', '비고'];
+                const xPositions = [70, 200, 350, 500, 650, 800];
+                headers.forEach((header, i) => {
+                    ctx.fillText(header, xPositions[i], 250);
+                });
+                
+                // 데이터 행
+                ctx.font = '14px Arial';
+                ctx.fillText('일반석고 보드', 70, 300);
+                ctx.fillText('900x1800 9.5mm', 200, 300);
+                ctx.fillText('ㄱ', 350, 300);
+                ctx.fillText('28.00', 500, 300);
+                ctx.fillText('20', 650, 300);
+                ctx.fillText('-', 800, 300);
+                
+                ctx.fillText('', 70, 330);
+                ctx.fillText('', 200, 330);
+                ctx.fillText('ㄴ', 350, 330);
+                ctx.fillText('5.60', 500, 330);
+                ctx.fillText('4', 650, 330);
+                ctx.fillText('-', 800, 330);
+                
+                // 소계
+                ctx.fillStyle = '#0000ff';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText('소계', 70, 380);
+                ctx.fillText('24', 650, 380);
+                
+                // 발주 총합
+                ctx.fillStyle = '#ff6b35';
+                ctx.fillRect(50, 650, 980, 200);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 20px Arial';
+                ctx.fillText('발주 총합', 540, 680);
+                
+                ctx.font = '16px Arial';
+                ctx.fillText('일반석고 보드 900x1800 9.5mm', 70, 720);
+                ctx.fillText('24장', 800, 720);
+                ctx.fillText('발주 필요', 900, 720);
+                
+                ctx.fillText('목자재 한치각 300x300 (2700mm)', 70, 760);
+                ctx.fillText('57개', 800, 760);
+                ctx.fillText('발주 필요', 900, 760);
+                
+                // 버튼들
+                const buttons = [
+                    {name: '저장', icon: '💾', x: 200, y: 900},
+                    {name: '인쇄', icon: '🖨️', x: 400, y: 900},
+                    {name: '공유', icon: '📤', x: 600, y: 900}
+                ];
+                
+                buttons.forEach(btn => {
+                    ctx.fillStyle = '#6a5acd';
+                    ctx.fillRect(btn.x, btn.y, 120, 50);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '16px Arial';
+                    ctx.fillText(btn.icon + ' ' + btn.name, btn.x + 20, btn.y + 30);
+                });
+                
+            } else if (type === 'share') {
+                // 공유 옵션
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 60, 1080, 1860);
+                
+                // 제목
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('물량 산출 결과', 540, 120);
+                
+                // 공유 방법 선택 모달
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(140, 400, 800, 600);
+                ctx.strokeRect(140, 400, 800, 600);
+                
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 20px Arial';
+                ctx.fillText('공유 방법 선택', 540, 450);
+                
+                // 공유 버튼들
+                const shareButtons = [
+                    {name: '카카오톡', color: '#ffeb3b', icon: '💬', y: 520},
+                    {name: '문자', color: '#9c27b0', icon: '💌', y: 600},
+                    {name: '이메일', color: '#e91e63', icon: '📧', y: 680}
+                ];
+                
+                shareButtons.forEach(btn => {
+                    ctx.fillStyle = btn.color;
+                    ctx.fillRect(200, btn.y, 680, 60);
+                    ctx.fillStyle = '#000';
+                    ctx.font = '18px Arial';
+                    ctx.fillText(btn.icon + ' ' + btn.name, 540, btn.y + 35);
+                });
+                
+                // 취소 버튼
+                ctx.fillStyle = '#ccc';
+                ctx.fillRect(200, 800, 680, 50);
+                ctx.fillStyle = '#000';
+                ctx.fillText('취소', 540, 830);
+                
+            } else if (type === 'floor') {
+                // 바닥 평면도
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 60, 1080, 1860);
+                
+                // 평면도 그리기
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                
+                // 외벽
+                ctx.strokeRect(100, 200, 880, 600);
+                
+                // 내부 벽들
+                ctx.strokeRect(100, 200, 880, 100); // 상단 벽
+                ctx.strokeRect(100, 200, 200, 600); // 좌측 벽
+                ctx.strokeRect(780, 200, 200, 600); // 우측 벽
+                ctx.strokeRect(100, 700, 880, 100); // 하단 벽
+                
+                // 내부 구분선들
+                ctx.strokeRect(300, 300, 0, 400); // 세로 구분선
+                ctx.strokeRect(500, 300, 0, 400); // 세로 구분선
+                ctx.strokeRect(100, 500, 880, 0); // 가로 구분선
+                
+                // 라벨들
+                ctx.fillStyle = '#000';
+                ctx.font = '14px Arial';
+                ctx.fillText('SINK 2,100*750', 120, 250);
+                ctx.fillText('Staff Lounge', 320, 250);
+                ctx.fillText('Washing Machine', 520, 250);
+                ctx.fillText('MOP SINK', 720, 250);
+                
+                ctx.fillText('Table 1,200*700', 120, 350);
+                ctx.fillText('Internet Line', 320, 350);
+                ctx.fillText('WALK IN COOLER', 520, 350);
+                
+                ctx.fillText('COKE 1,700*800', 120, 550);
+                ctx.fillText('TV', 320, 550);
+                ctx.fillText('REACH IN FREEZER', 520, 550);
+                
+                ctx.fillText('HOOD 2,500*900', 120, 750);
+                ctx.fillText('WOW OVEN', 320, 750);
+                ctx.fillText('ROUTING RACK', 520, 750);
+                
+                // 측정선
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(100, 150);
+                ctx.lineTo(980, 150);
+                ctx.stroke();
+                
+                // A, B 점
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(400, 400, 10, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText('A', 405, 405);
+                
+                ctx.fillStyle = '#00ff00';
+                ctx.beginPath();
+                ctx.arc(600, 500, 10, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#000';
+                ctx.fillText('B', 605, 505);
+            }
+            
+            ctx.textAlign = 'left';
+        }
+        
+        function downloadImage(type) {
+            createScreenshot(type);
+            const link = document.createElement('a');
+            link.download = `screenshot-${type}-1080x1920.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // 페이지 로드 시 첫 번째 스크린샷 생성
+        createScreenshot('splash');
+    </script>
+</body>
+</html>
+

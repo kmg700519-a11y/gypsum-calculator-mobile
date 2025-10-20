@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>아이콘 생성</title>
+</head>
+<body>
+    <canvas id="canvas" width="512" height="512" style="border:1px solid #ccc;"></canvas>
+    <br>
+    <button onclick="download()">다운로드</button>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 배경 그라데이션
+        const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+        gradient.addColorStop(0, '#6a5acd');
+        gradient.addColorStop(1, '#2e0854');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 512, 512);
+        
+        // 중앙 아이콘
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 120px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('📊', 256, 200);
+        
+        // 텍스트
+        ctx.font = 'bold 36px Arial';
+        ctx.fillText('석고보드', 256, 320);
+        ctx.font = 'bold 28px Arial';
+        ctx.fillText('물량산출기', 256, 360);
+        
+        function download() {
+            const link = document.createElement('a');
+            link.download = 'icon-512.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>
+

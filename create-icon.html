@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>앱 아이콘 생성기</title>
+</head>
+<body>
+    <canvas id="canvas" width="512" height="512" style="border:1px solid #ccc;"></canvas>
+    <br><br>
+    <button onclick="downloadIcon()">512x512 아이콘 다운로드</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function createIcon() {
+            // 배경 (둥근 사각형)
+            ctx.fillStyle = '#6a5acd';
+            ctx.fillRect(0, 0, 512, 512);
+            
+            // 둥근 모서리 효과를 위한 클리핑
+            ctx.beginPath();
+            ctx.roundRect(0, 0, 512, 512, 80);
+            ctx.clip();
+            
+            // 배경 그라데이션
+            const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+            gradient.addColorStop(0, '#6a5acd');
+            gradient.addColorStop(1, '#4b0082');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 512, 512);
+            
+            // 중앙에 계산기 아이콘
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 200px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('📊', 256, 200);
+            
+            // 하단에 텍스트
+            ctx.font = 'bold 32px Arial';
+            ctx.fillText('석고보드', 256, 320);
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText('물량산출기', 256, 360);
+            
+            // 장식용 선
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(100, 400);
+            ctx.lineTo(412, 400);
+            ctx.stroke();
+        }
+        
+        function downloadIcon() {
+            createIcon();
+            const link = document.createElement('a');
+            link.download = 'icon-512.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // 페이지 로드 시 아이콘 생성
+        createIcon();
+    </script>
+</body>
+</html>
+

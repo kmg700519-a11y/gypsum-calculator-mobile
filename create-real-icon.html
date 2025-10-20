@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>실제 PNG 아이콘 생성</title>
+</head>
+<body>
+    <h2>512x512 실제 PNG 아이콘 생성</h2>
+    <canvas id="canvas" width="512" height="512" style="border:2px solid #333;"></canvas>
+    <br><br>
+    <button onclick="downloadRealIcon()" style="padding:15px 30px; background:#6a5acd; color:white; border:none; border-radius:8px; cursor:pointer; font-size:16px;">실제 PNG 아이콘 다운로드</button>
+    <p id="status"></p>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        
+        function createRealIcon() {
+            // 배경 그라데이션
+            const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+            gradient.addColorStop(0, '#6a5acd');
+            gradient.addColorStop(0.5, '#4b0082');
+            gradient.addColorStop(1, '#2e0854');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 512, 512);
+            
+            // 둥근 모서리
+            ctx.globalCompositeOperation = 'destination-in';
+            ctx.beginPath();
+            ctx.roundRect(0, 0, 512, 512, 80);
+            ctx.fill();
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // 중앙 원형 배경
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            ctx.arc(256, 200, 80, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 차트 아이콘 그리기
+            // 녹색 바
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(200, 180, 20, 40);
+            
+            // 빨간색 바
+            ctx.fillStyle = '#F44336';
+            ctx.fillRect(240, 200, 20, 20);
+            
+            // 파란색 바
+            ctx.fillStyle = '#2196F3';
+            ctx.fillRect(280, 190, 20, 30);
+            
+            // 차트 배경
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fillRect(190, 170, 120, 60);
+            
+            // 텍스트
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 36px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('석고보드', 256, 320);
+            ctx.font = 'bold 28px Arial';
+            ctx.fillText('물량산출기', 256, 360);
+            
+            // 장식선
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(120, 400);
+            ctx.lineTo(392, 400);
+            ctx.stroke();
+        }
+        
+        function downloadRealIcon() {
+            createRealIcon();
+            
+            // 고품질 PNG로 변환
+            const dataURL = canvas.toDataURL('image/png', 1.0);
+            
+            // 파일 크기 확인
+            const base64 = dataURL.split(',')[1];
+            const binaryString = atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            status.innerHTML = `아이콘 생성 완료! 파일 크기: ${bytes.length} 바이트`;
+            
+            // 파일 다운로드
+            const link = document.createElement('a');
+            link.download = 'icon-512.png';
+            link.href = dataURL;
+            link.click();
+            
+            console.log('실제 PNG 아이콘 생성 완료:', bytes.length, 'bytes');
+        }
+        
+        // 페이지 로드 시 아이콘 생성
+        createRealIcon();
+    </script>
+</body>
+</html>
+
