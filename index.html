@@ -1568,7 +1568,8 @@
             canvas.addEventListener('mouseout', stopDrawing);
             canvas.addEventListener('click', handleWallClick);
             
-            canvas.addEventListener('wheel', handleWheelZoom);
+            // 캔버스에서만 줌 작동하도록 설정
+            canvas.addEventListener('wheel', handleWheelZoom, { passive: false });
             
             canvas.addEventListener('mousedown', startPanning);
             canvas.addEventListener('mousemove', handlePanning);
@@ -4287,12 +4288,19 @@
             // 함수는 기존 코드 호환성을 위해 유지
         }
 
-        // 휠 줌 처리
+        // 휠 줌 처리 (캔버스 영역에서만 작동)
         function handleWheelZoom(e) {
-            e.preventDefault();
+            // 캔버스 영역 내에서만 줌 작동
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
+            
+            // 캔버스 영역을 벗어나면 줌 작동하지 않음
+            if (mouseX < 0 || mouseX > rect.width || mouseY < 0 || mouseY > rect.height) {
+                return;
+            }
+            
+            e.preventDefault();
             
             const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
             const newZoom = zoomLevel * zoomFactor;
@@ -4360,11 +4368,24 @@
         
         function handlePinchZoom(e) {
             if (e.touches.length === 2) {
-                e.preventDefault();
-                isPinching = true;
-                
                 const touch1 = e.touches[0];
                 const touch2 = e.touches[1];
+                
+                // 캔버스 영역 내에서만 핀치 줌 작동
+                const rect = canvas.getBoundingClientRect();
+                const centerX = (touch1.clientX + touch2.clientX) / 2;
+                const centerY = (touch1.clientY + touch2.clientY) / 2;
+                
+                const mouseX = centerX - rect.left;
+                const mouseY = centerY - rect.top;
+                
+                // 캔버스 영역을 벗어나면 핀치 줌 작동하지 않음
+                if (mouseX < 0 || mouseX > rect.width || mouseY < 0 || mouseY > rect.height) {
+                    return;
+                }
+                
+                e.preventDefault();
+                isPinching = true;
                 
                 const distance = Math.sqrt(
                     Math.pow(touch2.clientX - touch1.clientX, 2) +
@@ -4376,13 +4397,6 @@
                     const newZoom = zoomLevel * scale;
                     
                     if (newZoom >= 0.1 && newZoom <= 5) {
-                        const centerX = (touch1.clientX + touch2.clientX) / 2;
-                        const centerY = (touch1.clientY + touch2.clientY) / 2;
-                        const rect = canvas.getBoundingClientRect();
-                        
-                        const mouseX = centerX - rect.left;
-                        const mouseY = centerY - rect.top;
-                        
                         const zoomX = mouseX - panX;
                         const zoomY = mouseY - panY;
                         
